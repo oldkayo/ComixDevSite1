@@ -1,0 +1,249 @@
+import React from "react";
+import Link from "next/link";
+import { db } from "@/lib/db";
+import { auth } from "@/auth";
+import { RegisterButton } from "@/components/register-button";
+import { buttonVariants } from "@/components/ui/button";
+import { Calendar, Clock, Users, Award, MapPin, ArrowRight, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { notFound } from "next/navigation";
+import { RegistrationStatus } from "@prisma/client";
+
+interface PageProps {
+  params: Promise<{ slug: string }>;
+}
+
+export default async function WorkshopDetailsPage({ params }: PageProps) {
+  const resolvedParams = await params;
+  const slug = resolvedParams.slug;
+
+  // Retrieve workshop details from database with non-cancelled registrations count
+  let workshop: any = null;
+  try {
+    workshop = await db.workshop.findUnique({
+      where: { slug },
+      include: {
+        registrations: {
+          where: {
+            status: { not: RegistrationStatus.CANCELLED },
+          },
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Database connection failed inside details page:", error);
+  }
+
+  if (!workshop || !workshop.isPublished) {
+    notFound();
+  }
+
+  // Get active session
+  const session = await auth();
+  const isLoggedIn = !!session?.user;
+  const userId = session?.user?.id;
+
+  // Check if current user is already registered (non-cancelled)
+  let isAlreadyRegistered = false;
+  if (isLoggedIn && userId && workshop) {
+    let userReg = null;
+    try {
+      userReg = await db.workshopRegistration.findUnique({
+        where: {
+          userId_workshopId: {
+            userId,
+            workshopId: workshop.id,
+          },
+        },
+      });
+    } catch (error) {
+      console.error("Database connection failed inside userReg details check:", error);
+    }
+    isAlreadyRegistered = !!userReg && userReg.status !== RegistrationStatus.CANCELLED;
+  }
+
+  // Seat capacity calculations
+  const activeRegistrantsCount = workshop.registrations.length;
+  const seatsLeft = Math.max(0, workshop.capacity - activeRegistrantsCount);
+  const isFull = seatsLeft <= 0;
+
+  const defaultImage = "/images/workshop_ai.png";
+
+  return (
+    <div className="w-full py-12 relative overflow-hidden">
+      {/* Background neon blurs */}
+      <div className="absolute top-1/4 left-1/3 w-[400px] h-[400px] bg-neon-cyan/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/3 w-[400px] h-[400px] bg-neon-purple/5 rounded-full blur-[120px] pointer-events-none" />
+
+      <div className="container mx-auto px-4 max-w-5xl space-y-8 relative z-10">
+        
+        {/* Back Link */}
+        <div>
+          <Link
+            href="/workshops"
+            className={buttonVariants({
+              variant: "outline",
+              className: "border-white/10 hover:bg-white/10 text-gray-300 inline-flex items-center gap-2"
+            })}
+          >
+            <ArrowRight className="w-4 h-4 ml-1" />
+            العودة إلى الورشات
+          </Link>
+        </div>
+
+        {/* Layout Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Main details info (2 cols wide) */}
+          <div className="lg:col-span-2 space-y-6">
+            
+            {/* Cover image wrapper */}
+            <div className="h-64 sm:h-96 w-full rounded-2xl overflow-hidden relative border border-white/10 shadow-2xl bg-gray-900">
+              <img
+                src={workshop.image || defaultImage}
+                alt={workshop.title}
+                className="w-full h-full object-cover opacity-80"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/40 to-transparent" />
+              
+              <div className="absolute bottom-6 right-6 left-6 space-y-2">
+                <h1 className="text-xl sm:text-3xl font-extrabold text-white leading-tight text-right">
+                  {workshop.title}
+                </h1>
+                <p className="text-xs sm:text-sm text-gray-300 text-right font-medium">
+                  {workshop.shortDescription}
+                </p>
+              </div>
+            </div>
+
+            {/* Syllabus Description */}
+            <div className="glass p-6 md:p-8 rounded-2xl border border-white/5 space-y-6 text-right">
+              <h2 className="text-xl font-bold text-white border-b border-white/5 pb-4">
+                عن ورشة العمل
+              </h2>
+              <div className="text-gray-300 text-sm md:text-base leading-relaxed space-y-4 whitespace-pre-line">
+                {workshop.description}
+              </div>
+
+              {/* What you'll learn */}
+              <div className="pt-4 space-y-3">
+                <h3 className="font-bold text-white text-sm md:text-base">محاور الورشة الأساسية:</h3>
+                <ul className="space-y-2 text-xs md:text-sm text-gray-400">
+                  <li className="flex items-center justify-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-neon-cyan shrink-0" />
+                    <span>تطبيقات عملية ومشاريع برمجية متكاملة يتم بناؤها أثناء الورشة.</span>
+                  </li>
+                  <li className="flex items-center justify-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-neon-cyan shrink-0" />
+                    <span>فهم أعمق للمفاهيم الأساسية والأدوات المستعملة في سوق العمل.</span>
+                  </li>
+                  <li className="flex items-center justify-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-neon-cyan shrink-0" />
+                    <span>نقاش تفاعلي للإجابة على تساؤلات المطورين وتوجيههم.</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Registration Sidebar Card (1 col wide) */}
+          <div className="space-y-6">
+            
+            <div className="glass p-6 rounded-2xl border border-white/10 shadow-2xl space-y-6 text-right">
+              
+              <h3 className="text-lg font-bold text-white border-b border-white/5 pb-3">
+                تفاصيل الحجز والاشتراك
+              </h3>
+
+              {/* Specs items */}
+              <div className="space-y-4 text-sm text-gray-300">
+                
+                {/* Date */}
+                <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                  <span className="text-gray-400">تاريخ البدء:</span>
+                  <span className="font-semibold text-white flex items-center gap-1.5">
+                    <Calendar className="w-4 h-4 text-neon-cyan" />
+                    {new Date(workshop.date).toLocaleDateString("ar-EG", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </span>
+                </div>
+
+                {/* Duration */}
+                <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                  <span className="text-gray-400">المدة الزمنية:</span>
+                  <span className="font-semibold text-white flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-neon-cyan" />
+                    {workshop.duration} دقيقة
+                  </span>
+                </div>
+
+                {/* Location */}
+                <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                  <span className="text-gray-400">الموقع:</span>
+                  <span className="font-semibold text-white flex items-center gap-1.5 max-w-[160px] truncate">
+                    <MapPin className="w-4 h-4 text-neon-cyan" />
+                    {workshop.location}
+                  </span>
+                </div>
+
+                {/* Seats Left */}
+                <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                  <span className="text-gray-400">المقاعد المتبقية:</span>
+                  <span className={`font-semibold flex items-center gap-1.5 ${seatsLeft < 5 ? 'text-red-400 font-bold' : 'text-neon-cyan'}`}>
+                    <Users className="w-4 h-4" />
+                    {seatsLeft} مقعد / {workshop.capacity}
+                  </span>
+                </div>
+
+                {/* Points Reward */}
+                <div className="flex items-center justify-between pb-1">
+                  <span className="text-gray-400">نقاط المكافأة:</span>
+                  <span className="font-mono font-bold text-neon-purple text-base flex items-center gap-1.5">
+                    <Award className="w-4.5 h-4.5" />
+                    +{workshop.pointsReward} نقطة ولاء
+                  </span>
+                </div>
+
+              </div>
+
+              {/* Registration Trigger CTA */}
+              <div className="pt-2 border-t border-white/5">
+                <RegisterButton
+                  workshopId={workshop.id}
+                  workshopSlug={workshop.slug}
+                  isLoggedIn={isLoggedIn}
+                  isAlreadyRegistered={isAlreadyRegistered}
+                  isFull={isFull}
+                />
+              </div>
+
+              <p className="text-[10px] text-gray-500 text-center leading-relaxed">
+                سيتلقى المشاركون رسالة بالبريد تحتوي على رابط القاعة الافتراضية للورشة بمجرد تأكيد الحجز.
+              </p>
+
+            </div>
+
+            {/* Additional verification badge panel */}
+            <div className="glass p-4 rounded-xl border border-white/5 text-right flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-white">تأكيد حجز فوري</h4>
+                <p className="text-[10px] text-gray-400 leading-normal">
+                  تتم معالجة الطلبات وإصدار المقاعد تلقائياً فور الحجز.
+                </p>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  );
+}

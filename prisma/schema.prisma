@@ -1,0 +1,392 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+model User {
+  id            String                 @id @default(cuid())
+  name          String?
+  email         String                 @unique
+  password      String?
+  image         String?
+  role          UserRole               @default(USER)
+  points        Int                    @default(0)
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+
+  // Application relationships
+  registrations     WorkshopRegistration[]
+  certificates      Certificate[]
+}
+
+// Workshop Model
+model Workshop {
+  id               String                 @id @default(cuid())
+  title            String
+  slug             String                 @unique
+  shortDescription String                 @db.Text
+  description      String                 @db.Text
+  image            String?
+  date             DateTime
+  duration         Int                    // In minutes
+  location         String
+  capacity         Int
+  pointsReward     Int                    @default(0)
+  isPublished      Boolean                @default(false)
+  isFeatured       Boolean                @default(false) // For homepage featured workshops
+  instructor       String?
+  whatYouWillLearn String?                @db.Text
+  requiredTools    String?                @db.Text
+  faq              String?                @db.Text
+  agenda           String?                @db.Text
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  registrations    WorkshopRegistration[]
+  certificates     Certificate[]
+}
+
+// Workshop Registration Status Enum
+enum RegistrationStatus {
+  REGISTERED
+  ATTENDED
+  CANCELLED
+}
+
+// Workshop Registration Model
+model WorkshopRegistration {
+  id           String             @id @default(cuid())
+  userId       String
+  workshopId   String
+  status       RegistrationStatus @default(REGISTERED)
+  registeredAt DateTime           @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workshop Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workshopId]) // Prevent duplicate registration for the same workshop
+}
+
+// Certificate Model
+model Certificate {
+  id                String   @id @default(cuid())
+  userId            String
+  workshopId        String
+  certificateNumber String   @unique // Format: CMD-YYYY-0001
+  title             String
+  pdfUrl            String?
+  issuedAt          DateTime @default(now())
+  createdAt         DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workshop Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+}
+
+// Prompt Category Model
+model PromptCategory {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  icon      String?
+  createdAt DateTime @default(now())
+
+  prompts   Prompt[]
+}
+
+// Prompt Model
+model Prompt {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  description String   @db.Text
+  content     String   @db.Text
+  categoryId  String
+  tags        String[] // PostgreSQL scalar lists
+  thumbnail   String?
+  isPublished Boolean  @default(false)
+  copyCount   Int      @default(0)
+  viewCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category    PromptCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+}
+
+enum GalleryItemType {
+  IMAGE
+  VIDEO
+}
+
+model Event {
+  id            String         @id @default(cuid())
+  title         String
+  slug          String         @unique
+  description   String         @db.Text
+  coverImage    String
+  startDate     DateTime
+  endDate       DateTime
+  location      String
+  hostedBy      String
+  attendeeCount Int            @default(0)
+  isPublished   Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  galleryItems  GalleryItem[]
+  partners      Partner[]      @relation("EventPartners")
+}
+
+model GalleryItem {
+  id        String          @id @default(cuid())
+  eventId   String?
+  albumId   String?
+  type      GalleryItemType
+  title     String
+  fileUrl   String
+  thumbnail String?
+  createdAt DateTime        @default(now())
+
+  event     Event?          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  album     Album?          @relation(fields: [albumId], references: [id], onDelete: Cascade)
+}
+
+model Partner {
+  id          String   @id @default(cuid())
+  name        String
+  logo        String
+  website     String?
+  description String?  @db.Text
+  isVisible   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  events      Event[]  @relation("EventPartners")
+}
+
+model SiteSettings {
+  id                     String   @id @default(cuid())
+  siteName               String
+  siteDescription        String   @db.Text
+  siteLogo               String?
+  favicon                String?
+  primaryColor           String?
+  secondaryColor         String?
+  contactEmail           String?
+  contactPhone           String?
+  whatsApp               String?
+  address                String?
+  workingHours           String?
+  copyrightText          String?
+  statsWorkshopsCount    Int      @default(0)
+  statsStudentsCount     Int      @default(0)
+  statsCertificatesCount Int      @default(0)
+  statsProjectsCount     Int      @default(0)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model SocialLink {
+  id        String   @id @default(cuid())
+  platform  String   // Instagram, LinkedIn, Facebook, X, YouTube, TikTok, GitHub, Discord
+  url       String
+  icon      String?
+  isVisible Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum NavigationType {
+  NAVBAR
+  FOOTER
+}
+
+model NavigationLink {
+  id        String         @id @default(cuid())
+  name      String
+  url       String
+  type      NavigationType
+  order     Int            @default(0)
+  isVisible Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+model SEOSettings {
+  id          String   @id @default(cuid())
+  page        String   @unique
+  title       String
+  description String   @db.Text
+  keywords    String
+  ogImage     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model HeroSectionSettings {
+  id              String   @id @default(cuid())
+  title           String
+  description     String   @db.Text
+  backgroundImage String?
+  buttonText1     String?
+  buttonLink1     String?
+  buttonText2     String?
+  buttonLink2     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model WhyComixDevItem {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  icon        String?
+  order       Int      @default(0)
+  isVisible   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Testimonial {
+  id        String   @id @default(cuid())
+  name      String
+  role      String
+  image     String?
+  content   String   @db.Text
+  isVisible Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LinkHubSettings {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  logo        String?
+  coverImage  String?
+  isEnabled   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SocialPlatform {
+  id           String   @id @default(cuid())
+  platform     String   @unique
+  icon         String?
+  url          String   @default("")
+  isEnabled    Boolean  @default(false)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model CustomLink {
+  id           String   @id @default(cuid())
+  title        String
+  icon         String?
+  url          String
+  isEnabled    Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model RateLimit {
+  id        String   @id @default(cuid())
+  action    String
+  ip        String
+  key       String
+  timestamp DateTime @default(now())
+
+  @@index([action, ip, timestamp])
+}
+
+// ==========================================
+// NEW MODELS FOR COMPLETE CMS
+// ==========================================
+
+// About Us Settings
+model AboutUsSettings {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  mission     String?  @db.Text
+  vision      String?  @db.Text
+  values      String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Team Member
+model TeamMember {
+  id          String   @id @default(cuid())
+  name        String
+  position    String
+  image       String?
+  description String?  @db.Text
+  socialLinks Json?    // JSON for social links
+  isVisible   Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Contact Form Settings
+model ContactFormSettings {
+  id                String   @id @default(cuid())
+  isFormEnabled     Boolean  @default(true)
+  receiveEmails     Boolean  @default(true)
+  successMessage    String   @default("Thank you for your message! We will get back to you soon.")
+  autoReplyMessage  String?  @db.Text
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+// Contact Message Status Enum
+enum ContactMessageStatus {
+  NEW
+  READ
+  REPLIED
+}
+
+// Contact Message
+model ContactMessage {
+  id        String                 @id @default(cuid())
+  name      String
+  email     String
+  message   String                 @db.Text
+  status    ContactMessageStatus   @default(NEW)
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
+}
+
+// Certificate Template
+model CertificateTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  templateUrl String
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Album for Gallery
+model Album {
+  id          String        @id @default(cuid())
+  title       String
+  description String?       @db.Text
+  coverImage  String?
+  isVisible   Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  galleryItems GalleryItem[]
+}
+
