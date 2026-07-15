@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { RegistrationStatus } from "@prisma/client";
+import { RegistrationStatus, WorkshopStatus } from "@prisma/client";
 
 import { WorkshopSchema } from "@/lib/schemas";
 
@@ -15,6 +15,13 @@ async function checkAdmin() {
     throw new Error("غير مصرح: يجب أن تكون مديراً للقيام بهذا الإجراء.");
   }
   return session;
+}
+
+// Helper to process comma-separated strings into arrays (for photos/videos)
+function processStringArray(input: string | string[] | undefined): string[] {
+  if (!input) return [];
+  if (Array.isArray(input)) return input;
+  return input.split(",").map(s => s.trim()).filter(Boolean);
 }
 
 // 1. Create Workshop
@@ -32,11 +39,20 @@ export async function createWorkshop(values: z.infer<typeof WorkshopSchema>) {
     description,
     image,
     date,
+    startTime,
+    endTime,
     duration,
     location,
     capacity,
     pointsReward,
     isPublished,
+    status,
+    attendeeCount,
+    workshopNotes,
+    hostOrganization,
+    galleryLink,
+    workshopPhotos,
+    workshopVideos,
   } = validatedFields.data;
 
   try {
@@ -63,11 +79,20 @@ export async function createWorkshop(values: z.infer<typeof WorkshopSchema>) {
         description,
         image: image || null,
         date: new Date(date),
+        startTime: startTime || null,
+        endTime: endTime || null,
         duration,
         location,
         capacity,
         pointsReward,
         isPublished,
+        status: status as WorkshopStatus,
+        attendeeCount: attendeeCount || 0,
+        workshopNotes: workshopNotes || null,
+        hostOrganization: hostOrganization || null,
+        galleryLink: galleryLink || null,
+        workshopPhotos: processStringArray(workshopPhotos),
+        workshopVideos: processStringArray(workshopVideos),
       },
     });
 
@@ -98,11 +123,20 @@ export async function updateWorkshop(id: string, values: z.infer<typeof Workshop
     description,
     image,
     date,
+    startTime,
+    endTime,
     duration,
     location,
     capacity,
     pointsReward,
     isPublished,
+    status,
+    attendeeCount,
+    workshopNotes,
+    hostOrganization,
+    galleryLink,
+    workshopPhotos,
+    workshopVideos,
   } = validatedFields.data;
 
   try {
@@ -134,11 +168,20 @@ export async function updateWorkshop(id: string, values: z.infer<typeof Workshop
         description,
         image: image || null,
         date: new Date(date),
+        startTime: startTime || null,
+        endTime: endTime || null,
         duration,
         location,
         capacity,
         pointsReward,
         isPublished,
+        status: status as WorkshopStatus,
+        attendeeCount: attendeeCount || 0,
+        workshopNotes: workshopNotes || null,
+        hostOrganization: hostOrganization || null,
+        galleryLink: galleryLink || null,
+        workshopPhotos: processStringArray(workshopPhotos),
+        workshopVideos: processStringArray(workshopVideos),
       },
     });
 
@@ -200,9 +243,47 @@ export async function updateRegistrationStatus(registrationId: string, status: R
       data: { status },
     });
 
+    // If status is ATTENDED and Workshop is COMPLETED, issue certificate if not exists
+    if (status === RegistrationStatus.ATTENDED && existingReg.workshop.status === WorkshopStatus.COMPLETED) {
+      const existingCertificate = await db.certificate.findFirst({
+        where: {
+          userId: existingReg.userId,
+          workshopId: existingReg.workshopId,
+        },
+      });
+
+      if (!existingCertificate) {
+        // Generate certificate number like CMD-YYYY-XXXX
+        const year = new Date().getFullYear();
+        const lastCertificate = await db.certificate.findFirst({
+          where: { certificateNumber: { startsWith: `CMD-${year}-` } },
+          orderBy: { certificateNumber: "desc" },
+        });
+        
+        let sequenceNumber = 1;
+        if (lastCertificate) {
+          const parts = lastCertificate.certificateNumber.split("-");
+          sequenceNumber = parseInt(parts[2], 10) + 1;
+        }
+        
+        const certificateNumber = `CMD-${year}-${String(sequenceNumber).padStart(4, "0")}`;
+
+        await db.certificate.create({
+          data: {
+            userId: existingReg.userId,
+            workshopId: existingReg.workshopId,
+            certificateNumber,
+            title: `شهادة حضور ورشة عمل: ${existingReg.workshop.title}`,
+            issuedAt: new Date(),
+          },
+        });
+      }
+    }
+
     // Revalidate admin views
     revalidatePath(`/admin/workshops/${existingReg.workshopId}/registrations`);
     revalidatePath("/dashboard/workshops");
+    revalidatePath("/dashboard/certificates");
 
     return { success: "تم تحديث حالة التسجيل بنجاح!" };
   } catch (error) {

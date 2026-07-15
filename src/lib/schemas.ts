@@ -5,13 +5,23 @@ export const WorkshopSchema = z.object({
   title: z.string().min(3, "العنوان يجب أن يتكون من 3 أحرف على الأقل"),
   shortDescription: z.string().min(5, "الوصف المختصر يجب أن يتكون من 5 أحرف على الأقل"),
   description: z.string().min(10, "الوصف الكامل يجب أن يتكون من 10 أحرف على الأقل"),
-  image: z.string().optional().or(z.literal("")),
+  image: z.string().optional().or(z.literal("")), // coverImage
   date: z.string().min(1, "يرجى تحديد تاريخ الورشة"),
-  duration: z.coerce.number().min(1, "المدة يجب أن تكون أكبر من 0"),
+  startTime: z.string().optional().or(z.literal("")),
+  endTime: z.string().optional().or(z.literal("")),
+  duration: z.coerce.number().min(1, "المدة يجب أن تكون أكبر من 0").optional().default(120),
   location: z.string().min(3, "الموقع يجب أن يتكون من 3 أحرف على الأقل"),
   capacity: z.coerce.number().min(1, "السعة الاستيعابية يجب أن تكون أكبر من 0"),
   pointsReward: z.coerce.number().min(0, "نقاط الولاء لا يمكن أن تكون سالبة"),
   isPublished: z.boolean().default(false),
+  status: z.enum(["UPCOMING", "ONGOING", "COMPLETED", "CANCELLED"]).default("UPCOMING"),
+  // Fields for COMPLETED status
+  attendeeCount: z.coerce.number().min(0).optional().default(0),
+  workshopNotes: z.string().optional().or(z.literal("")),
+  hostOrganization: z.string().optional().or(z.literal("")),
+  galleryLink: z.string().optional().or(z.literal("")),
+  workshopPhotos: z.array(z.string()).optional().default([]),
+  workshopVideos: z.array(z.string()).optional().default([]),
 });
 
 // Register validation schema with passwords matching refine

@@ -28,6 +28,14 @@ model User {
   certificates      Certificate[]
 }
 
+// Workshop Status Enum
+enum WorkshopStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
 // Workshop Model
 model Workshop {
   id               String                 @id @default(cuid())
@@ -35,24 +43,39 @@ model Workshop {
   slug             String                 @unique
   shortDescription String                 @db.Text
   description      String                 @db.Text
-  image            String?
+  coverImage       String?                @map("image") // Renamed for consistency
   date             DateTime
-  duration         Int                    // In minutes
+  startTime        String?
+  endTime          String?
   location         String
   capacity         Int
   pointsReward     Int                    @default(0)
+  status           WorkshopStatus         @default(UPCOMING)
   isPublished      Boolean                @default(false)
-  isFeatured       Boolean                @default(false) // For homepage featured workshops
+  isFeatured       Boolean                @default(false)
   instructor       String?
   whatYouWillLearn String?                @db.Text
   requiredTools    String?                @db.Text
   faq              String?                @db.Text
   agenda           String?                @db.Text
+
+  // Fields for completed workshops
+  attendeeCount    Int                    @default(0)
+  workshopPhotos   String[]               @default([])
+  workshopVideos   String[]               @default([])
+  workshopNotes    String?                @db.Text
+  hostOrganization String?
+  galleryLink      String?
+
   createdAt        DateTime               @default(now())
   updatedAt        DateTime               @updatedAt
 
   registrations    WorkshopRegistration[]
   certificates     Certificate[]
+  galleryItems     GalleryItem[]
+  workshopPartners WorkshopPartner[]
+
+  @@map("Workshop")
 }
 
 // Workshop Registration Status Enum
@@ -142,13 +165,27 @@ model Event {
   updatedAt     DateTime       @updatedAt
 
   galleryItems  GalleryItem[]
-  partners      Partner[]      @relation("EventPartners")
+  eventPartners EventPartner[]
+}
+
+// Join table for Event <-> Partner
+model EventPartner {
+  id        String   @id @default(cuid())
+  eventId   String
+  partnerId String
+  createdAt DateTime @default(now())
+
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  partner   Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, partnerId])
 }
 
 model GalleryItem {
   id        String          @id @default(cuid())
   eventId   String?
   albumId   String?
+  workshopId String?
   type      GalleryItemType
   title     String
   fileUrl   String
@@ -157,18 +194,33 @@ model GalleryItem {
 
   event     Event?          @relation(fields: [eventId], references: [id], onDelete: Cascade)
   album     Album?          @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  workshop  Workshop?       @relation(fields: [workshopId], references: [id], onDelete: Cascade)
 }
 
 model Partner {
-  id          String   @id @default(cuid())
+  id          String         @id @default(cuid())
   name        String
   logo        String
   website     String?
-  description String?  @db.Text
-  isVisible   Boolean  @default(true)
-  createdAt   DateTime @default(now())
+  description String?        @db.Text
+  isVisible   Boolean        @default(true)
+  createdAt   DateTime       @default(now())
 
-  events      Event[]  @relation("EventPartners")
+  eventPartners   EventPartner[]
+  workshopPartners WorkshopPartner[]
+}
+
+// Join table for Workshop <-> Partner
+model WorkshopPartner {
+  id        String   @id @default(cuid())
+  workshopId String
+  partnerId String
+  createdAt DateTime @default(now())
+
+  workshop  Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  partner   Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@unique([workshopId, partnerId])
 }
 
 model SiteSettings {

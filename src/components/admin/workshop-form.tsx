@@ -23,6 +23,15 @@ interface WorkshopFormProps {
     capacity: number;
     pointsReward: number;
     isPublished: boolean;
+    status?: string;
+    startTime?: string | null;
+    endTime?: string | null;
+    attendeeCount?: number;
+    workshopNotes?: string | null;
+    hostOrganization?: string | null;
+    galleryLink?: string | null;
+    workshopPhotos?: string[];
+    workshopVideos?: string[];
   };
   mode: "create" | "edit";
 }
@@ -31,6 +40,7 @@ export function WorkshopForm({ initialData, mode }: WorkshopFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState(initialData?.status || "UPCOMING");
 
   // Convert Date object to datetime-local string YYYY-MM-DDTHH:MM
   const formatDateForInput = (dateObj?: Date) => {
@@ -53,11 +63,21 @@ export function WorkshopForm({ initialData, mode }: WorkshopFormProps) {
     const description = formData.get("description") as string;
     const image = formData.get("image") as string;
     const date = formData.get("date") as string;
-    const duration = parseInt(formData.get("duration") as string);
+    const duration = parseInt(formData.get("duration") as string) || 120;
+    const startTime = formData.get("startTime") as string;
+    const endTime = formData.get("endTime") as string;
     const location = formData.get("location") as string;
     const capacity = parseInt(formData.get("capacity") as string);
     const pointsReward = parseInt(formData.get("pointsReward") as string);
     const isPublished = formData.get("isPublished") === "true";
+    const statusVal = formData.get("status") as string;
+    
+    const attendeeCount = parseInt(formData.get("attendeeCount") as string) || 0;
+    const workshopNotes = formData.get("workshopNotes") as string;
+    const hostOrganization = formData.get("hostOrganization") as string;
+    const galleryLink = formData.get("galleryLink") as string;
+    const workshopPhotosStr = formData.get("workshopPhotos") as string;
+    const workshopVideosStr = formData.get("workshopVideos") as string;
 
     const payload = {
       title,
@@ -66,10 +86,19 @@ export function WorkshopForm({ initialData, mode }: WorkshopFormProps) {
       image,
       date,
       duration,
+      startTime,
+      endTime,
       location,
       capacity,
       pointsReward,
       isPublished,
+      status: statusVal,
+      attendeeCount,
+      workshopNotes,
+      hostOrganization,
+      galleryLink,
+      workshopPhotos: workshopPhotosStr.split(",").map(s => s.trim()).filter(Boolean),
+      workshopVideos: workshopVideosStr.split(",").map(s => s.trim()).filter(Boolean),
     };
 
     // Client-side schema validation using Zod schema
@@ -204,6 +233,34 @@ export function WorkshopForm({ initialData, mode }: WorkshopFormProps) {
           />
         </div>
 
+        {/* Start Time */}
+        <div className="space-y-1.5">
+          <label htmlFor="startTime" className="text-sm font-semibold text-gray-300 block text-right">
+            وقت البدء (اختياري)
+          </label>
+          <Input
+            type="time"
+            id="startTime"
+            name="startTime"
+            defaultValue={initialData?.startTime || ""}
+            className="bg-white/5 border-white/10 text-white placeholder-gray-600 focus:border-neon-cyan focus:ring-neon-cyan text-right"
+          />
+        </div>
+
+        {/* End Time */}
+        <div className="space-y-1.5">
+          <label htmlFor="endTime" className="text-sm font-semibold text-gray-300 block text-right">
+            وقت الانتهاء (اختياري)
+          </label>
+          <Input
+            type="time"
+            id="endTime"
+            name="endTime"
+            defaultValue={initialData?.endTime || ""}
+            className="bg-white/5 border-white/10 text-white placeholder-gray-600 focus:border-neon-cyan focus:ring-neon-cyan text-right"
+          />
+        </div>
+
         {/* Duration */}
         <div className="space-y-1.5">
           <label htmlFor="duration" className="text-sm font-semibold text-gray-300 block text-right">
@@ -268,6 +325,25 @@ export function WorkshopForm({ initialData, mode }: WorkshopFormProps) {
           />
         </div>
 
+        {/* Workshop Status */}
+        <div className="space-y-1.5">
+          <label htmlFor="status" className="text-sm font-semibold text-gray-300 block text-right">
+            حالة الورشة
+          </label>
+          <select
+            id="status"
+            name="status"
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white focus:border-neon-cyan focus:outline-none focus:ring-1 focus:ring-neon-cyan"
+          >
+            <option value="UPCOMING" className="bg-gray-950 text-white">قادمة</option>
+            <option value="ONGOING" className="bg-gray-950 text-white">جارية</option>
+            <option value="COMPLETED" className="bg-gray-950 text-white">مكتملة</option>
+            <option value="CANCELLED" className="bg-gray-950 text-white">ملغية</option>
+          </select>
+        </div>
+
         {/* Publish Status */}
         <div className="space-y-1.5">
           <label htmlFor="isPublished" className="text-sm font-semibold text-gray-300 block text-right">
@@ -283,8 +359,106 @@ export function WorkshopForm({ initialData, mode }: WorkshopFormProps) {
             <option value="true" className="bg-gray-950 text-white">منشورة (تظهر للجميع)</option>
           </select>
         </div>
-
       </div>
+
+      {/* Conditional Fields for COMPLETED Status */}
+      {selectedStatus === "COMPLETED" && (
+        <div className="space-y-6 border-t border-white/10 pt-6">
+          <h3 className="text-lg font-semibold text-white text-right">تفاصيل الورشة المكتملة</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Attendee Count */}
+            <div className="space-y-1.5">
+              <label htmlFor="attendeeCount" className="text-sm font-semibold text-gray-300 block text-right">
+                عدد الحضور
+              </label>
+              <Input
+                type="number"
+                id="attendeeCount"
+                name="attendeeCount"
+                defaultValue={initialData?.attendeeCount || 0}
+                min={0}
+                className="bg-white/5 border-white/10 text-white placeholder-gray-600 focus:border-neon-cyan focus:ring-neon-cyan"
+              />
+            </div>
+
+            {/* Host Organization */}
+            <div className="space-y-1.5">
+              <label htmlFor="hostOrganization" className="text-sm font-semibold text-gray-300 block text-right">
+                الجهة المستضيفة أو الشركاء
+              </label>
+              <Input
+                type="text"
+                id="hostOrganization"
+                name="hostOrganization"
+                defaultValue={initialData?.hostOrganization || ""}
+                placeholder="مثال: شركاء ComixDev"
+                className="bg-white/5 border-white/10 text-white placeholder-gray-600 focus:border-neon-cyan focus:ring-neon-cyan"
+              />
+            </div>
+
+            {/* Gallery Link */}
+            <div className="space-y-1.5 md:col-span-2">
+              <label htmlFor="galleryLink" className="text-sm font-semibold text-gray-300 block text-right">
+                رابط معرض الصور (اختياري)
+              </label>
+              <Input
+                type="text"
+                id="galleryLink"
+                name="galleryLink"
+                defaultValue={initialData?.galleryLink || ""}
+                placeholder="رابط معرض الصور على منصة خارجية"
+                className="bg-white/5 border-white/10 text-white placeholder-gray-600 focus:border-neon-cyan focus:ring-neon-cyan"
+              />
+            </div>
+
+            {/* Workshop Photos (comma-separated URLs) */}
+            <div className="space-y-1.5 md:col-span-2">
+              <label htmlFor="workshopPhotos" className="text-sm font-semibold text-gray-300 block text-right">
+                روابط صور الورشة (افصل بينهم بفاصلة)
+              </label>
+              <Textarea
+                id="workshopPhotos"
+                name="workshopPhotos"
+                defaultValue={initialData?.workshopPhotos?.join(", ") || ""}
+                rows={2}
+                placeholder="https://example.com/photo1.jpg, https://example.com/photo2.jpg"
+                className="bg-white/5 border-white/10 text-white placeholder-gray-600 focus:border-neon-cyan focus:ring-neon-cyan resize-none"
+              />
+            </div>
+
+            {/* Workshop Videos (comma-separated URLs) */}
+            <div className="space-y-1.5 md:col-span-2">
+              <label htmlFor="workshopVideos" className="text-sm font-semibold text-gray-300 block text-right">
+                روابط فيديوهات الورشة (افصل بينهم بفاصلة)
+              </label>
+              <Textarea
+                id="workshopVideos"
+                name="workshopVideos"
+                defaultValue={initialData?.workshopVideos?.join(", ") || ""}
+                rows={2}
+                placeholder="https://example.com/video1.mp4, https://example.com/video2.mp4"
+                className="bg-white/5 border-white/10 text-white placeholder-gray-600 focus:border-neon-cyan focus:ring-neon-cyan resize-none"
+              />
+            </div>
+
+            {/* Workshop Notes */}
+            <div className="space-y-1.5 md:col-span-2">
+              <label htmlFor="workshopNotes" className="text-sm font-semibold text-gray-300 block text-right">
+                ملاحظات الورشة
+              </label>
+              <Textarea
+                id="workshopNotes"
+                name="workshopNotes"
+                defaultValue={initialData?.workshopNotes || ""}
+                rows={3}
+                placeholder="اكتب ملاحظات عن الورشة، ما تم تقديمه، التوصيات المستقبلية..."
+                className="bg-white/5 border-white/10 text-white placeholder-gray-600 focus:border-neon-cyan focus:ring-neon-cyan resize-none"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Action buttons */}
       <div className="flex items-center gap-4 pt-4 border-t border-white/5">

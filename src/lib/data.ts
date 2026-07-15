@@ -8,12 +8,22 @@ export interface Workshop {
   shortDescription: string;
   description: string;
   image: string | null;
+  coverImage: string | null;
   date: Date;
+  startTime: string | null;
+  endTime: string | null;
   duration: number;
   location: string;
   capacity: number;
   pointsReward: number;
+  status: string;
   isPublished: boolean;
+  attendeeCount: number;
+  workshopPhotos: string[];
+  workshopVideos: string[];
+  workshopNotes: string | null;
+  hostOrganization: string | null;
+  galleryLink: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -94,9 +104,43 @@ export async function getPublishedWorkshops(): Promise<Workshop[]> {
     return await db.workshop.findMany({
       where: { isPublished: true },
       orderBy: { date: "asc" },
-    });
+    }) as any[];
   } catch (error) {
     console.error("Database connection failed inside getPublishedWorkshops, returning empty list:", error);
+    return [];
+  }
+}
+
+// Fetch upcoming workshops (published)
+export async function getUpcomingWorkshops(): Promise<Workshop[]> {
+  try {
+    return await db.workshop.findMany({
+      where: { 
+        isPublished: true, 
+        status: { in: ["UPCOMING", "ONGOING"] } 
+      },
+      include: { certificates: true },
+      orderBy: { date: "asc" },
+    }) as any[];
+  } catch (error) {
+    console.error("Database connection failed inside getUpcomingWorkshops, returning empty list:", error);
+    return [];
+  }
+}
+
+// Fetch completed workshops (published)
+export async function getCompletedWorkshops(): Promise<Workshop[]> {
+  try {
+    return await db.workshop.findMany({
+      where: { 
+        isPublished: true, 
+        status: "COMPLETED" 
+      },
+      include: { certificates: true },
+      orderBy: { date: "desc" },
+    }) as any[];
+  } catch (error) {
+    console.error("Database connection failed inside getCompletedWorkshops, returning empty list:", error);
     return [];
   }
 }

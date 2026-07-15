@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import { RegisterButton } from "@/components/register-button";
 import { buttonVariants } from "@/components/ui/button";
-import { Calendar, Clock, Users, Award, MapPin, ArrowRight, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { Calendar, Clock, Users, Award, MapPin, ArrowRight, ShieldCheck, CheckCircle2, Image, Video, ExternalLink } from "lucide-react";
 import { notFound } from "next/navigation";
 import { RegistrationStatus } from "@prisma/client";
 
@@ -27,6 +27,7 @@ export default async function WorkshopDetailsPage({ params }: PageProps) {
             status: { not: RegistrationStatus.CANCELLED },
           },
         },
+        certificates: true,
       },
     });
   } catch (error) {
@@ -36,6 +37,10 @@ export default async function WorkshopDetailsPage({ params }: PageProps) {
   if (!workshop || !workshop.isPublished) {
     notFound();
   }
+
+  const isCompleted = workshop.status === "COMPLETED";
+  const isCancelled = workshop.status === "CANCELLED";
+  const isUpcomingOrOngoing = ["UPCOMING", "ONGOING"].includes(workshop.status);
 
   // Get active session
   const session = await auth();
@@ -67,6 +72,7 @@ export default async function WorkshopDetailsPage({ params }: PageProps) {
   const isFull = seatsLeft <= 0;
 
   const defaultImage = "/images/workshop_ai.png";
+  const coverImage = workshop.coverImage || workshop.image || defaultImage;
 
   return (
     <div className="w-full py-12 relative overflow-hidden">
@@ -99,16 +105,27 @@ export default async function WorkshopDetailsPage({ params }: PageProps) {
             {/* Cover image wrapper */}
             <div className="h-64 sm:h-96 w-full rounded-2xl overflow-hidden relative border border-white/10 shadow-2xl bg-gray-900">
               <img
-                src={workshop.image || defaultImage}
+                src={coverImage}
                 alt={workshop.title}
                 className="w-full h-full object-cover opacity-80"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/40 to-transparent" />
               
               <div className="absolute bottom-6 right-6 left-6 space-y-2">
-                <h1 className="text-xl sm:text-3xl font-extrabold text-white leading-tight text-right">
-                  {workshop.title}
-                </h1>
+                <div className="flex items-center justify-between gap-4">
+                  <h1 className="text-xl sm:text-3xl font-extrabold text-white leading-tight text-right">
+                    {workshop.title}
+                  </h1>
+                  <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                    isCompleted 
+                      ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400" 
+                      : isCancelled
+                        ? "bg-red-500/10 border border-red-500/20 text-red-400"
+                        : "bg-neon-cyan/10 border border-neon-cyan/20 text-neon-cyan"
+                  }`}>
+                    {isCompleted ? "مكتملة" : isCancelled ? "ملغية" : workshop.status === "ONGOING" ? "جارية" : "قادمة"}
+                  </div>
+                </div>
                 <p className="text-xs sm:text-sm text-gray-300 text-right font-medium">
                   {workshop.shortDescription}
                 </p>
@@ -118,41 +135,90 @@ export default async function WorkshopDetailsPage({ params }: PageProps) {
             {/* Syllabus Description */}
             <div className="glass p-6 md:p-8 rounded-2xl border border-white/5 space-y-6 text-right">
               <h2 className="text-xl font-bold text-white border-b border-white/5 pb-4">
-                عن ورشة العمل
+                {isCompleted ? "ملخص ورشة العمل" : "عن ورشة العمل"}
               </h2>
               <div className="text-gray-300 text-sm md:text-base leading-relaxed space-y-4 whitespace-pre-line">
                 {workshop.description}
               </div>
 
-              {/* What you'll learn */}
-              <div className="pt-4 space-y-3">
-                <h3 className="font-bold text-white text-sm md:text-base">محاور الورشة الأساسية:</h3>
-                <ul className="space-y-2 text-xs md:text-sm text-gray-400">
-                  <li className="flex items-center justify-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-neon-cyan shrink-0" />
-                    <span>تطبيقات عملية ومشاريع برمجية متكاملة يتم بناؤها أثناء الورشة.</span>
-                  </li>
-                  <li className="flex items-center justify-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-neon-cyan shrink-0" />
-                    <span>فهم أعمق للمفاهيم الأساسية والأدوات المستعملة في سوق العمل.</span>
-                  </li>
-                  <li className="flex items-center justify-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-neon-cyan shrink-0" />
-                    <span>نقاش تفاعلي للإجابة على تساؤلات المطورين وتوجيههم.</span>
-                  </li>
-                </ul>
-              </div>
+              {!isCompleted && (
+                /* What you'll learn - only for upcoming/ongoing */
+                <div className="pt-4 space-y-3">
+                  <h3 className="font-bold text-white text-sm md:text-base">محاور الورشة الأساسية:</h3>
+                  <ul className="space-y-2 text-xs md:text-sm text-gray-400">
+                    <li className="flex items-center justify-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-neon-cyan shrink-0" />
+                      <span>تطبيقات عملية ومشاريع برمجية متكاملة يتم بناؤها أثناء الورشة.</span>
+                    </li>
+                    <li className="flex items-center justify-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-neon-cyan shrink-0" />
+                      <span>فهم أعمق للمفاهيم الأساسية والأدوات المستعملة في سوق العمل.</span>
+                    </li>
+                    <li className="flex items-center justify-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-neon-cyan shrink-0" />
+                      <span>نقاش تفاعلي للإجابة على تساؤلات المطورين وتوجيههم.</span>
+                    </li>
+                  </ul>
+                </div>
+              )}
+              
+              {isCompleted && workshop.workshopNotes && (
+                <div className="pt-4 space-y-3">
+                  <h3 className="font-bold text-white text-sm md:text-base">ملاحظات ورشة العمل:</h3>
+                  <p className="text-xs md:text-sm text-gray-400 whitespace-pre-line">{workshop.workshopNotes}</p>
+                </div>
+              )}
+              
+              {isCompleted && (workshop.workshopPhotos.length > 0 || workshop.workshopVideos.length > 0) && (
+                <div className="pt-4 space-y-3">
+                  <h3 className="font-bold text-white text-sm md:text-base">محتوى الورشة:</h3>
+                  
+                  {workshop.workshopPhotos.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-xs font-semibold text-gray-400 flex items-center gap-2">
+                        <Image className="w-4 h-4 text-neon-cyan" />
+                        الصور:
+                      </h4>
+                      <div className="grid grid-cols-3 gap-2">
+                        {workshop.workshopPhotos.map((photo: string, idx: number) => (
+                          <a key={idx} href={photo} target="_blank" rel="noopener noreferrer" className="block">
+                            <img src={photo} alt={`صورة ${idx + 1}`} className="rounded-lg border border-white/5 aspect-square object-cover" />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {workshop.workshopVideos.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-xs font-semibold text-gray-400 flex items-center gap-2">
+                        <Video className="w-4 h-4 text-neon-purple" />
+                        الفيديوهات:
+                      </h4>
+                      <div className="space-y-2">
+                        {workshop.workshopVideos.map((video: string, idx: number) => (
+                          <a key={idx} href={video} target="_blank" rel="noopener noreferrer" 
+                             className="flex items-center gap-2 text-neon-blue text-sm hover:underline">
+                            <ExternalLink className="w-4 h-4" />
+                            <span>فيديو {idx + 1}</span>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
           </div>
 
-          {/* Registration Sidebar Card (1 col wide) */}
+          {/* Sidebar Card (1 col wide) */}
           <div className="space-y-6">
             
             <div className="glass p-6 rounded-2xl border border-white/10 shadow-2xl space-y-6 text-right">
               
               <h3 className="text-lg font-bold text-white border-b border-white/5 pb-3">
-                تفاصيل الحجز والاشتراك
+                {isCompleted ? "تفاصيل ورشة العمل" : "تفاصيل الحجز والاشتراك"}
               </h3>
 
               {/* Specs items */}
@@ -160,7 +226,7 @@ export default async function WorkshopDetailsPage({ params }: PageProps) {
                 
                 {/* Date */}
                 <div className="flex items-center justify-between border-b border-white/5 pb-3">
-                  <span className="text-gray-400">تاريخ البدء:</span>
+                  <span className="text-gray-400">تاريخ الورشة:</span>
                   <span className="font-semibold text-white flex items-center gap-1.5">
                     <Calendar className="w-4 h-4 text-neon-cyan" />
                     {new Date(workshop.date).toLocaleDateString("ar-EG", {
@@ -170,15 +236,37 @@ export default async function WorkshopDetailsPage({ params }: PageProps) {
                     })}
                   </span>
                 </div>
+                
+                {workshop.startTime && (
+                  <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                    <span className="text-gray-400">وقت البدء:</span>
+                    <span className="font-semibold text-white flex items-center gap-1.5">
+                      <Clock className="w-4 h-4 text-neon-cyan" />
+                      {workshop.startTime}
+                    </span>
+                  </div>
+                )}
+                
+                {workshop.endTime && (
+                  <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                    <span className="text-gray-400">وقت الانتهاء:</span>
+                    <span className="font-semibold text-white flex items-center gap-1.5">
+                      <Clock className="w-4 h-4 text-neon-cyan" />
+                      {workshop.endTime}
+                    </span>
+                  </div>
+                )}
 
-                {/* Duration */}
-                <div className="flex items-center justify-between border-b border-white/5 pb-3">
-                  <span className="text-gray-400">المدة الزمنية:</span>
-                  <span className="font-semibold text-white flex items-center gap-1.5">
-                    <Clock className="w-4 h-4 text-neon-cyan" />
-                    {workshop.duration} دقيقة
-                  </span>
-                </div>
+                {!isCompleted && (
+                  /* Duration - only show for not completed */
+                  <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                    <span className="text-gray-400">المدة الزمنية:</span>
+                    <span className="font-semibold text-white flex items-center gap-1.5">
+                      <Clock className="w-4 h-4 text-neon-cyan" />
+                      {workshop.duration} دقيقة
+                    </span>
+                  </div>
+                )}
 
                 {/* Location */}
                 <div className="flex items-center justify-between border-b border-white/5 pb-3">
@@ -189,40 +277,106 @@ export default async function WorkshopDetailsPage({ params }: PageProps) {
                   </span>
                 </div>
 
-                {/* Seats Left */}
-                <div className="flex items-center justify-between border-b border-white/5 pb-3">
-                  <span className="text-gray-400">المقاعد المتبقية:</span>
-                  <span className={`font-semibold flex items-center gap-1.5 ${seatsLeft < 5 ? 'text-red-400 font-bold' : 'text-neon-cyan'}`}>
-                    <Users className="w-4 h-4" />
-                    {seatsLeft} مقعد / {workshop.capacity}
-                  </span>
-                </div>
+                {isCompleted && (
+                  /* Attendee count - only for completed */
+                  <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                    <span className="text-gray-400">عدد الحضور:</span>
+                    <span className="font-semibold text-emerald-400 flex items-center gap-1.5">
+                      <Users className="w-4 h-4" />
+                      {workshop.attendeeCount || 0} مشارك
+                    </span>
+                  </div>
+                )}
+                
+                {isCompleted && workshop.certificates.length > 0 && (
+                  /* Certificates count - only for completed */
+                  <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                    <span className="text-gray-400">الشهادات الصادرة:</span>
+                    <span className="font-semibold text-neon-purple flex items-center gap-1.5">
+                      <Award className="w-4 h-4" />
+                      {workshop.certificates.length} شهادة
+                    </span>
+                  </div>
+                )}
+                
+                {!isCompleted && (
+                  /* Seats Left & Points - only show if not completed */
+                  <>
+                    <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                      <span className="text-gray-400">المقاعد المتبقية:</span>
+                      <span className={`font-semibold flex items-center gap-1.5 ${seatsLeft < 5 ? 'text-red-400 font-bold' : 'text-neon-cyan'}`}>
+                        <Users className="w-4 h-4" />
+                        {seatsLeft} مقعد / {workshop.capacity}
+                      </span>
+                    </div>
 
-                {/* Points Reward */}
-                <div className="flex items-center justify-between pb-1">
-                  <span className="text-gray-400">نقاط المكافأة:</span>
-                  <span className="font-mono font-bold text-neon-purple text-base flex items-center gap-1.5">
-                    <Award className="w-4.5 h-4.5" />
-                    +{workshop.pointsReward} نقطة ولاء
-                  </span>
-                </div>
-
+                    {/* Points Reward */}
+                    <div className="flex items-center justify-between pb-1">
+                      <span className="text-gray-400">نقاط المكافأة:</span>
+                      <span className="font-mono font-bold text-neon-purple text-base flex items-center gap-1.5">
+                        <Award className="w-4.5 h-4.5" />
+                        +{workshop.pointsReward} نقطة ولاء
+                      </span>
+                    </div>
+                  </>
+                )}
+                
+                {isCompleted && workshop.galleryLink && (
+                  <div className="pt-2">
+                    <a href={workshop.galleryLink} target="_blank" rel="noopener noreferrer"
+                       className={buttonVariants({
+                         className: "w-full bg-white/5 hover:bg-neon-purple hover:text-gray-950 text-white border border-white/10 hover:border-neon-purple transition-all duration-300 flex items-center justify-center gap-2"
+                       })}>
+                      <ExternalLink className="w-4 h-4" />
+                      عرض المعرض الكامل
+                    </a>
+                  </div>
+                )}
+                
+                {isCompleted && workshop.hostOrganization && (
+                  <div className="pt-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-xs">مع:</span>
+                      <span className="font-semibold text-neon-blue text-xs">{workshop.hostOrganization}</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Registration Trigger CTA */}
-              <div className="pt-2 border-t border-white/5">
-                <RegisterButton
-                  workshopId={workshop.id}
-                  workshopSlug={workshop.slug}
-                  isLoggedIn={isLoggedIn}
-                  isAlreadyRegistered={isAlreadyRegistered}
-                  isFull={isFull}
-                />
-              </div>
+              {!isCompleted && !isCancelled && (
+                /* Registration Trigger CTA - only show if not completed and not cancelled */
+                <div className="pt-2 border-t border-white/5">
+                  <RegisterButton
+                    workshopId={workshop.id}
+                    workshopSlug={workshop.slug}
+                    isLoggedIn={isLoggedIn}
+                    isAlreadyRegistered={isAlreadyRegistered}
+                    isFull={isFull}
+                  />
+                </div>
+              )}
+              
+              {isCompleted && (
+                <div className="pt-2 border-t border-white/5">
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-center text-xs py-3 px-4 rounded-lg">
+                    هذه الورشة مكتملة بالفعل.
+                  </div>
+                </div>
+              )}
+              
+              {isCancelled && (
+                <div className="pt-2 border-t border-white/5">
+                  <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-center text-xs py-3 px-4 rounded-lg">
+                    هذه الورشة ملغية.
+                  </div>
+                </div>
+              )}
 
-              <p className="text-[10px] text-gray-500 text-center leading-relaxed">
-                سيتلقى المشاركون رسالة بالبريد تحتوي على رابط القاعة الافتراضية للورشة بمجرد تأكيد الحجز.
-              </p>
+              {!isCompleted && !isCancelled && (
+                <p className="text-[10px] text-gray-500 text-center leading-relaxed">
+                  سيتلقى المشاركون رسالة بالبريد تحتوي على رابط القاعة الافتراضية للورشة بمجرد تأكيد الحجز.
+                </p>
+              )}
 
             </div>
 
@@ -232,9 +386,11 @@ export default async function WorkshopDetailsPage({ params }: PageProps) {
                 <ShieldCheck className="w-5 h-5 text-emerald-400" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-white">تأكيد حجز فوري</h4>
+                <h4 className="text-xs font-bold text-white">منصة موثوقة</h4>
                 <p className="text-[10px] text-gray-400 leading-normal">
-                  تتم معالجة الطلبات وإصدار المقاعد تلقائياً فور الحجز.
+                  {isCompleted 
+                    ? "الشهادات موثقة ومحفوظة في قاعدة البيانات." 
+                    : "تتم معالجة الطلبات وإصدار المقاعد تلقائياً فور الحجز."}
                 </p>
               </div>
             </div>
