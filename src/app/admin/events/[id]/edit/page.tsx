@@ -30,7 +30,7 @@ export default async function AdminEventEditPage({ params }: PageProps) {
     [event, partners] = await Promise.all([
       db.event.findUnique({
         where: { id },
-        include: { partners: { select: { id: true, name: true } } }
+        include: { eventPartners: { include: { partner: { select: { id: true, name: true } } } } }
       }),
       db.partner.findMany({
         orderBy: { name: "asc" },
@@ -40,6 +40,12 @@ export default async function AdminEventEditPage({ params }: PageProps) {
   } catch (error) {
     console.error("Failed to query edit event info:", error);
   }
+
+  // Flatten the eventPartners join to a simple partner list for the form
+  if (event?.eventPartners) {
+    event = { ...event, partners: event.eventPartners.map((ep: any) => ep.partner) };
+  }
+
 
   if (!event) {
     notFound();

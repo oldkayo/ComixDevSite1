@@ -6,7 +6,8 @@ import { createTestimonial, updateTestimonial } from "@/actions/cms";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, CheckCircle2, AlertCircle, Sparkles, User } from "lucide-react";
+import { ImageUpload } from "@/components/ui/image-upload";
+import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface TestimonialFormProps {
   initialTestimonial?: {
@@ -31,8 +32,6 @@ export function TestimonialForm({ initialTestimonial }: TestimonialFormProps) {
   const [image, setImage] = useState("");
   const [content, setContent] = useState("");
 
-  const [uploading, setUploading] = useState(false);
-
   useEffect(() => {
     if (initialTestimonial) {
       setName(initialTestimonial.name);
@@ -46,35 +45,6 @@ export function TestimonialForm({ initialTestimonial }: TestimonialFormProps) {
       setContent("");
     }
   }, [initialTestimonial]);
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", "comix_dev_preset"); // Unsigned preset
-
-    try {
-      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "demo";
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setImage(data.secure_url);
-      } else {
-        setImage("/images/workshop_ai.png");
-      }
-    } catch (err) {
-      setImage("/images/workshop_ai.png");
-    } finally {
-      setUploading(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -171,56 +141,13 @@ export function TestimonialForm({ initialTestimonial }: TestimonialFormProps) {
       </div>
 
       {/* Avatar Image Upload */}
-      <div className="space-y-1">
-        <label className="text-[10px] font-semibold text-gray-400 block">صورة شخصية (اختياري)</label>
-        <div className="flex flex-col sm:flex-row items-center gap-2">
-          
-          <div className="relative flex-1 w-full">
-            <Input
-              type="text"
-              placeholder="رابط الصورة المباشر أو الرفع..."
-              value={image}
-              onChange={(e) => setImage(e.target.value)}
-              disabled={saving}
-              className="bg-white/5 border-white/10 text-white focus:border-neon-cyan focus:ring-neon-cyan text-right text-xs h-9 w-full"
-            />
-          </div>
-
-          <div className="shrink-0 w-full sm:w-auto">
-            <input
-              type="file"
-              id="testiImageUpload"
-              accept="image/*"
-              onChange={handleImageUpload}
-              disabled={saving || uploading}
-              className="hidden"
-            />
-            <label
-              htmlFor="testiImageUpload"
-              className="w-full sm:w-auto bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[10px] font-semibold px-4 h-9 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
-            >
-              {uploading ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-neon-cyan" />
-                  جاري الرفع...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-3.5 h-3.5 text-neon-cyan" />
-                  رفع صورة
-                </>
-              )}
-            </label>
-          </div>
-
-        </div>
-
-        {image && (
-          <div className="mt-2 w-12 h-12 rounded-full overflow-hidden border border-white/5 bg-gray-900 flex items-center justify-center">
-            <img src={image} alt="Avatar" className="w-full h-full object-cover" />
-          </div>
-        )}
-      </div>
+      <ImageUpload
+        value={image}
+        onChange={setImage}
+        disabled={saving}
+        label="صورة شخصية (اختياري)"
+        placeholder="اختر صورة أو اسحبها هنا"
+      />
 
       {/* Content Textarea */}
       <div className="space-y-1">
@@ -256,7 +183,7 @@ export function TestimonialForm({ initialTestimonial }: TestimonialFormProps) {
         )}
         <Button
           type="submit"
-          disabled={saving || uploading || !name || !role || !content}
+          disabled={saving || !name || !role || !content}
           className="bg-gradient-to-r from-neon-cyan to-neon-blue text-white hover:opacity-90 text-xs h-9 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer flex-1"
         >
           {saving ? (

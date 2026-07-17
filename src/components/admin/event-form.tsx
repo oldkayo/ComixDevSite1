@@ -6,7 +6,8 @@ import { createEvent, updateEvent } from "@/actions/media";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Calendar, MapPin, Users, CheckCircle2, AlertCircle, Sparkles } from "lucide-react";
+import { ImageUpload } from "@/components/ui/image-upload";
+import { Loader2, Calendar, MapPin, Users, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface Partner {
   id: string;
@@ -55,51 +56,6 @@ export function EventForm({ partners, initialEvent }: EventFormProps) {
     initialEvent?.partners.map((p) => p.id) || []
   );
 
-  const [uploadingImage, setUploadingImage] = useState(false);
-
-  // Cloudinary direct upload function
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploadingImage(true);
-    setStatus(null);
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", "comix_dev_preset"); // Unsigned preset
-
-    try {
-      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-      if (!cloudName) {
-        throw new Error("Cloudinary Cloud Name not configured");
-      }
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setCoverImage(data.secure_url);
-      } else {
-        const errorText = await res.text();
-        console.error("Cloudinary upload failed:", res.status, errorText);
-        setStatus({
-          type: "error",
-          message: "فشل رفع الصورة. يرجى إضافة رابط صورة مباشرة أو التأكد من إعدادات Cloudinary."
-        });
-      }
-    } catch (err) {
-      console.error("Direct upload failed:", err);
-      setStatus({
-        type: "error",
-        message: "فشل رفع الصورة. يرجى إضافة رابط صورة مباشرة."
-      });
-    } finally {
-      setUploadingImage(false);
-    }
-  };
-
   const handlePartnerToggle = (pid: string) => {
     setSelectedPartnerIds((prev) =>
       prev.includes(pid) ? prev.filter((id) => id !== pid) : [...prev, pid]
@@ -114,7 +70,7 @@ export function EventForm({ partners, initialEvent }: EventFormProps) {
     const payload = {
       title,
       description,
-      coverImage: coverImage || "/images/workshop_ai.png",
+      coverImage,
       startDate: new Date(startDate),
       endDate: new Date(endDate),
       location,
@@ -282,60 +238,14 @@ export function EventForm({ partners, initialEvent }: EventFormProps) {
         </div>
 
         {/* Cover Image Upload */}
-        <div className="space-y-1.5 md:col-span-2">
-          <label className="text-xs font-semibold text-gray-400 block">
-            صورة غلاف الفعالية
-          </label>
-          <div className="flex flex-col sm:flex-row items-center gap-4">
-            
-            {/* Input field URL */}
-            <div className="relative flex-1 w-full">
-              <Input
-                type="text"
-                placeholder="رابط الصورة المباشر أو الرفع..."
-                value={coverImage}
-                onChange={(e) => setCoverImage(e.target.value)}
-                disabled={saving}
-                className="bg-white/5 border-white/10 text-white focus:border-neon-cyan focus:ring-neon-cyan text-right text-sm h-10 w-full"
-              />
-            </div>
-
-            {/* Cloudinary upload action */}
-            <div className="relative shrink-0 w-full sm:w-auto">
-              <input
-                type="file"
-                id="coverUpload"
-                accept="image/*"
-                onChange={handleLogoUpload}
-                disabled={saving || uploadingImage}
-                className="hidden"
-              />
-              <label
-                htmlFor="coverUpload"
-                className="w-full sm:w-auto bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white text-xs font-semibold px-5 h-10 rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors"
-              >
-                {uploadingImage ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin text-neon-cyan" />
-                    جاري الرفع...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 text-neon-cyan" />
-                    رفع ملف الغلاف
-                  </>
-                )}
-              </label>
-            </div>
-
-          </div>
-
-          {/* Image preview */}
-          {coverImage && (
-            <div className="mt-2 w-32 h-20 rounded-xl overflow-hidden border border-white/5 bg-gray-900">
-              <img src={coverImage} alt="Preview" className="w-full h-full object-cover" />
-            </div>
-          )}
+        <div className="md:col-span-2">
+          <ImageUpload
+            value={coverImage}
+            onChange={setCoverImage}
+            disabled={saving}
+            label="صورة غلاف الفعالية"
+            placeholder="اختر صورة أو اسحبها هنا"
+          />
         </div>
 
       </div>

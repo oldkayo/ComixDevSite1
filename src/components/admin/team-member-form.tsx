@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, CheckCircle2, AlertCircle, Sparkles } from "lucide-react";
+import { ImageUpload } from "@/components/ui/image-upload";
+import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface TeamMemberFormProps {
   initialTeamMember?: {
@@ -45,54 +46,6 @@ export function TeamMemberForm({ initialTeamMember }: TeamMemberFormProps) {
       ? JSON.stringify(initialTeamMember.socialLinks, null, 2)
       : "",
   );
-
-  const [uploading, setUploading] = useState(false);
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploading(true);
-    setStatus(null);
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", "comix_dev_preset"); // Unsigned preset
-
-    try {
-      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-      if (!cloudName) {
-        throw new Error("Cloudinary Cloud Name not configured");
-      }
-      const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        {
-          method: "POST",
-          body: formData,
-        },
-      );
-
-      if (res.ok) {
-        const data = await res.json();
-        setImage(data.secure_url);
-      } else {
-        const errorText = await res.text();
-        console.error("Cloudinary upload failed:", res.status, errorText);
-        setStatus({
-          type: "error",
-          message:
-            "فشل رفع الصورة. يرجى إضافة رابط صورة مباشرة أو التأكد من إعدادات Cloudinary.",
-        });
-      }
-    } catch (err) {
-      console.error("Direct upload failed:", err);
-      setStatus({
-        type: "error",
-        message: "فشل رفع الصورة. يرجى إضافة رابط صورة مباشرة.",
-      });
-    } finally {
-      setUploading(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -193,48 +146,13 @@ export function TeamMemberForm({ initialTeamMember }: TeamMemberFormProps) {
       </div>
 
       {/* Image */}
-      <div className="space-y-1">
-        <label className="text-[10px] font-semibold text-gray-400 block">
-          الصورة الشخصية
-        </label>
-        <div className="flex flex-col sm:flex-row items-center gap-2">
-          <div className="flex-1 w-full">
-            <Input
-              placeholder="رابط الصورة..."
-              value={image}
-              onChange={(e) => setImage(e.target.value)}
-              disabled={saving}
-              className="bg-white/5 border-white/10 text-white text-xs h-9"
-            />
-          </div>
-          <div className="shrink-0 w-full sm:w-auto">
-            <input
-              type="file"
-              id="teamImageUpload"
-              accept="image/*"
-              onChange={handleImageUpload}
-              disabled={saving || uploading}
-              className="hidden"
-            />
-            <label
-              htmlFor="teamImageUpload"
-              className="w-full sm:w-auto bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[10px] font-semibold px-4 h-9 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
-            >
-              {uploading ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-neon-cyan" />
-                  جاري الرفع...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-3.5 h-3.5 text-neon-cyan" />
-                  رفع صورة
-                </>
-              )}
-            </label>
-          </div>
-        </div>
-      </div>
+      <ImageUpload
+        value={image}
+        onChange={setImage}
+        disabled={saving}
+        label="الصورة الشخصية"
+        placeholder="اختر صورة أو اسحبها هنا"
+      />
 
       <div className="space-y-1">
         <label className="text-[10px] font-semibold text-gray-400 block">

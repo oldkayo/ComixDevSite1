@@ -4,9 +4,18 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createPrompt, updatePrompt } from "@/actions/prompt";
 import { Button } from "@/components/ui/button";
+import { ImageUpload } from "@/components/ui/image-upload";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Terminal, AlertCircle, CheckCircle2, FileText, Tag, Folder } from "lucide-react";
+import {
+  Loader2,
+  Terminal,
+  AlertCircle,
+  CheckCircle2,
+  FileText,
+  Tag,
+  Folder,
+} from "lucide-react";
 
 interface Category {
   id: string;
@@ -30,18 +39,29 @@ interface PromptFormProps {
 export function PromptForm({ categories, initialPrompt }: PromptFormProps) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
-  const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [status, setStatus] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   const isEditMode = !!initialPrompt;
 
   // Form states pre-filled if editing
   const [title, setTitle] = useState(initialPrompt?.title || "");
-  const [description, setDescription] = useState(initialPrompt?.description || "");
+  const [description, setDescription] = useState(
+    initialPrompt?.description || "",
+  );
   const [content, setContent] = useState(initialPrompt?.content || "");
-  const [categoryId, setCategoryId] = useState(initialPrompt?.categoryId || (categories[0]?.id || ""));
-  const [tags, setTags] = useState(initialPrompt?.tags ? initialPrompt.tags.join(", ") : "");
+  const [categoryId, setCategoryId] = useState(
+    initialPrompt?.categoryId || categories[0]?.id || "",
+  );
+  const [tags, setTags] = useState(
+    initialPrompt?.tags ? initialPrompt.tags.join(", ") : "",
+  );
   const [thumbnail, setThumbnail] = useState(initialPrompt?.thumbnail || "");
-  const [isPublished, setIsPublished] = useState(initialPrompt?.isPublished || false);
+  const [isPublished, setIsPublished] = useState(
+    initialPrompt?.isPublished || false,
+  );
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -70,14 +90,20 @@ export function PromptForm({ categories, initialPrompt }: PromptFormProps) {
       if (result.error) {
         setStatus({ type: "error", message: result.error });
       } else {
-        setStatus({ type: "success", message: result.success || "تم حفظ البيانات بنجاح!" });
+        setStatus({
+          type: "success",
+          message: result.success || "تم حفظ البيانات بنجاح!",
+        });
         setTimeout(() => {
           router.push("/admin/prompts");
           router.refresh();
         }, 1500);
       }
     } catch (error) {
-      setStatus({ type: "error", message: "حدث خطأ غير متوقع أثناء حفظ البيانات." });
+      setStatus({
+        type: "error",
+        message: "حدث خطأ غير متوقع أثناء حفظ البيانات.",
+      });
     } finally {
       setSaving(false);
     }
@@ -85,7 +111,6 @@ export function PromptForm({ categories, initialPrompt }: PromptFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 text-right" dir="rtl">
-      
       {/* Alert Status Banners */}
       {status?.type === "success" && (
         <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm">
@@ -103,10 +128,12 @@ export function PromptForm({ categories, initialPrompt }: PromptFormProps) {
 
       {/* Grid Inputs */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
         {/* Title */}
         <div className="space-y-1.5">
-          <label htmlFor="title" className="text-xs font-semibold text-gray-400 block">
+          <label
+            htmlFor="title"
+            className="text-xs font-semibold text-gray-400 block"
+          >
             عنوان البرومبت
           </label>
           <div className="relative">
@@ -126,7 +153,10 @@ export function PromptForm({ categories, initialPrompt }: PromptFormProps) {
 
         {/* Category Dropdown */}
         <div className="space-y-1.5">
-          <label htmlFor="category" className="text-xs font-semibold text-gray-400 block">
+          <label
+            htmlFor="category"
+            className="text-xs font-semibold text-gray-400 block"
+          >
             تصنيف البرومبت
           </label>
           <div className="relative">
@@ -139,7 +169,11 @@ export function PromptForm({ categories, initialPrompt }: PromptFormProps) {
               className="w-full bg-white/5 border border-white/10 text-white rounded-lg pr-10 pl-4 py-2.5 text-sm focus:border-neon-cyan focus:ring-neon-cyan focus:outline-none cursor-pointer"
             >
               {categories.map((cat) => (
-                <option key={cat.id} value={cat.id} className="bg-gray-950 text-gray-300">
+                <option
+                  key={cat.id}
+                  value={cat.id}
+                  className="bg-gray-950 text-gray-300"
+                >
                   {cat.name}
                 </option>
               ))}
@@ -149,7 +183,10 @@ export function PromptForm({ categories, initialPrompt }: PromptFormProps) {
 
         {/* Tags */}
         <div className="space-y-1.5">
-          <label htmlFor="tags" className="text-xs font-semibold text-gray-400 block">
+          <label
+            htmlFor="tags"
+            className="text-xs font-semibold text-gray-400 block"
+          >
             الوسوم (مفصولة بفاصلة)
           </label>
           <div className="relative">
@@ -167,30 +204,24 @@ export function PromptForm({ categories, initialPrompt }: PromptFormProps) {
           </div>
         </div>
 
-        {/* Thumbnail Image URL */}
-        <div className="space-y-1.5">
-          <label htmlFor="thumbnail" className="text-xs font-semibold text-gray-400 block">
-            رابط الصورة المصغرة (اختياري)
-          </label>
-          <div className="relative">
-            <FileText className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
-            <Input
-              type="text"
-              id="thumbnail"
-              value={thumbnail}
-              onChange={(e) => setThumbnail(e.target.value)}
-              disabled={saving}
-              placeholder="https://example.com/image.png..."
-              className="bg-white/5 border-white/10 text-white pr-10 pl-4 focus:border-neon-cyan focus:ring-neon-cyan text-right text-sm"
-            />
-          </div>
+        {/* Thumbnail Image */}
+        <div className="md:col-span-2">
+          <ImageUpload
+            value={thumbnail}
+            onChange={setThumbnail}
+            disabled={saving}
+            label="الصورة المصغرة"
+            placeholder="اختر صورة أو اسحبها هنا"
+          />
         </div>
-
       </div>
 
       {/* Description */}
       <div className="space-y-1.5">
-        <label htmlFor="description" className="text-xs font-semibold text-gray-400 block">
+        <label
+          htmlFor="description"
+          className="text-xs font-semibold text-gray-400 block"
+        >
           وصف مختصر للبرومبت
         </label>
         <Textarea
@@ -207,7 +238,10 @@ export function PromptForm({ categories, initialPrompt }: PromptFormProps) {
 
       {/* Content */}
       <div className="space-y-1.5">
-        <label htmlFor="content" className="text-xs font-semibold text-gray-400 block">
+        <label
+          htmlFor="content"
+          className="text-xs font-semibold text-gray-400 block"
+        >
           البرومبت الكامل (Prompt Content)
         </label>
         <Textarea
@@ -225,7 +259,10 @@ export function PromptForm({ categories, initialPrompt }: PromptFormProps) {
 
       {/* Publish Status Toggle */}
       <div className="flex items-center gap-2 justify-end py-2">
-        <label htmlFor="isPublished" className="text-sm font-semibold text-gray-300 cursor-pointer">
+        <label
+          htmlFor="isPublished"
+          className="text-sm font-semibold text-gray-300 cursor-pointer"
+        >
           نشر البرومبت مباشرة للجمهور
         </label>
         <input
@@ -258,12 +295,13 @@ export function PromptForm({ categories, initialPrompt }: PromptFormProps) {
               <Loader2 className="w-4 h-4 animate-spin" />
               جاري الحفظ...
             </>
+          ) : isEditMode ? (
+            "تحديث البرومبت"
           ) : (
-            isEditMode ? "تحديث البرومبت" : "إنشاء البرومبت"
+            "إنشاء البرومبت"
           )}
         </Button>
       </div>
-
     </form>
   );
 }

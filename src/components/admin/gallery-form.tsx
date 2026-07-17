@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { createGalleryItem } from "@/actions/media";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Film, CheckCircle2, AlertCircle, Sparkles } from "lucide-react";
+import { ImageUpload } from "@/components/ui/image-upload";
+import { VideoUpload } from "@/components/ui/video-upload";
+import { Loader2, Film, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface EventItem {
   id: string;
@@ -26,56 +28,6 @@ export function GalleryForm({ events }: GalleryFormProps) {
   const [type, setType] = useState<"IMAGE" | "VIDEO">("IMAGE");
   const [fileUrl, setFileUrl] = useState("");
   const [thumbnail, setThumbnail] = useState("");
-
-  const [uploading, setUploading] = useState(false);
-
-  // Cloudinary direct upload function
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", "comix_dev_preset"); // Unsigned preset
-
-    const resourceType = type === "VIDEO" ? "video" : "image";
-
-    try {
-      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "demo";
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setFileUrl(data.secure_url);
-        // If upload is video, Cloudinary can return a thumbnail or image frame, we can store it as thumbnail
-        if (type === "VIDEO" && data.duration) {
-          // Cloudinary auto-generates video cover frames by replacing the extension with jpg
-          const thumbUrl = data.secure_url.replace(/\.[^/.]+$/, ".jpg");
-          setThumbnail(thumbUrl);
-        }
-      } else {
-        console.warn("Upload failed, simulating mock url.");
-        const simulatedUrl = type === "VIDEO" ? "https://www.w3schools.com/html/mov_bbb.mp4" : "/images/workshop_ai.png";
-        setFileUrl(simulatedUrl);
-        if (type === "VIDEO") {
-          setThumbnail("/images/workshop_prompt.png");
-        }
-      }
-    } catch (err) {
-      console.error("Direct upload failed, simulating fallback file.", err);
-      const simulatedUrl = type === "VIDEO" ? "https://www.w3schools.com/html/mov_bbb.mp4" : "/images/workshop_ai.png";
-      setFileUrl(simulatedUrl);
-      if (type === "VIDEO") {
-        setThumbnail("/images/workshop_prompt.png");
-      }
-    } finally {
-      setUploading(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -212,75 +164,41 @@ export function GalleryForm({ events }: GalleryFormProps) {
         </div>
       </div>
 
-      {/* Upload File Box */}
-      <div className="space-y-1">
-        <label className="text-[10px] font-semibold text-gray-400 block">الملف المرفوع</label>
-        <div className="flex flex-col sm:flex-row items-center gap-2">
-          
-          <div className="relative flex-1 w-full">
-            <Input
-              type="text"
-              placeholder={type === "VIDEO" ? "رابط الفيديو المباشر أو الرفع..." : "رابط الصورة المباشر أو الرفع..."}
-              value={fileUrl}
-              onChange={(e) => setFileUrl(e.target.value)}
-              disabled={saving}
-              className="bg-white/5 border-white/10 text-white focus:border-neon-cyan focus:ring-neon-cyan text-right text-xs h-9 w-full"
-            />
-          </div>
-
-          <div className="shrink-0 w-full sm:w-auto">
-            <input
-              type="file"
-              id="galleryFileUpload"
-              accept={type === "VIDEO" ? "video/*" : "image/*"}
-              onChange={handleFileUpload}
-              disabled={saving || uploading}
-              className="hidden"
-            />
-            <label
-              htmlFor="galleryFileUpload"
-              className="w-full sm:w-auto bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[10px] font-semibold px-4 h-9 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
-            >
-              {uploading ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-neon-cyan" />
-                  جاري الرفع...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-3.5 h-3.5 text-neon-cyan" />
-                  رفع ملف
-                </>
-              )}
-            </label>
-          </div>
-
-        </div>
-      </div>
+      {/* Upload File */}
+      {type === "IMAGE" ? (
+        <ImageUpload
+          value={fileUrl}
+          onChange={setFileUrl}
+          disabled={saving}
+          label="الصورة المرفوعة"
+          placeholder="اختر صورة أو اسحبها هنا"
+        />
+      ) : (
+        <VideoUpload
+          value={fileUrl}
+          onChange={setFileUrl}
+          disabled={saving}
+          label="الفيديو المرفوع"
+          placeholder="اختر فيديو أو اسحبه هنا"
+        />
+      )}
 
       {/* Thumbnail URL for video (optional) */}
       {type === "VIDEO" && (
-        <div className="space-y-1">
-          <label htmlFor="videoThumb" className="text-[10px] font-semibold text-gray-400 block">
-            صورة مصغرة للفيديو (اختياري)
-          </label>
-          <Input
-            type="text"
-            id="videoThumb"
-            placeholder="https://example.com/frame.jpg..."
-            value={thumbnail}
-            onChange={(e) => setThumbnail(e.target.value)}
-            disabled={saving}
-            className="bg-white/5 border-white/10 text-white focus:border-neon-cyan focus:ring-neon-cyan text-right text-xs h-9"
-          />
-        </div>
+        <ImageUpload
+          value={thumbnail}
+          onChange={setThumbnail}
+          disabled={saving}
+          label="صورة مصغرة للفيديو (اختياري)"
+          placeholder="اختر صورة أو اسحبها هنا"
+        />
       )}
 
       {/* Submit */}
       <div className="pt-2">
         <Button
           type="submit"
-          disabled={saving || uploading || !fileUrl}
+          disabled={saving || !fileUrl}
           className="w-full bg-gradient-to-r from-neon-cyan to-neon-blue text-white hover:opacity-90 text-xs h-9 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer"
         >
           {saving ? (

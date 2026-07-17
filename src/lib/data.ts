@@ -7,12 +7,11 @@ export interface Workshop {
   slug: string;
   shortDescription: string;
   description: string;
-  image: string | null;
   coverImage: string | null;
   date: Date;
   startTime: string | null;
   endTime: string | null;
-  duration: number;
+  duration: string | null;
   location: string;
   capacity: number;
   pointsReward: number;
@@ -136,7 +135,12 @@ export async function getCompletedWorkshops(): Promise<Workshop[]> {
         isPublished: true, 
         status: "COMPLETED" 
       },
-      include: { certificates: true },
+      include: { 
+        certificates: true,
+        workshopPartners: {
+          include: { partner: true }
+        }
+      },
       orderBy: { date: "desc" },
     }) as any[];
   } catch (error) {
@@ -144,6 +148,34 @@ export async function getCompletedWorkshops(): Promise<Workshop[]> {
     return [];
   }
 }
+
+// Workshop statistics for the stats section
+export async function getWorkshopStats() {
+  try {
+    const [upcoming, completed, totalAttendees] = await Promise.all([
+      db.workshop.count({
+        where: { status: { in: ["UPCOMING", "ONGOING"] }, isPublished: true },
+      }),
+      db.workshop.count({
+        where: { status: "COMPLETED", isPublished: true },
+      }),
+      db.workshop.aggregate({
+        where: { status: "COMPLETED" },
+        _sum: { attendeeCount: true },
+      }),
+    ]);
+
+    return {
+      upcoming,
+      completed,
+      totalAttendees: totalAttendees._sum.attendeeCount || 0,
+    };
+  } catch (error) {
+    console.error("Database connection failed inside getWorkshopStats, returning zeroed stats:", error);
+    return { upcoming: 0, completed: 0, totalAttendees: 0 };
+  }
+}
+
 
 // Fetch a single workshop by ID
 export async function getWorkshopById(id: string): Promise<Workshop | null> {

@@ -45,7 +45,28 @@ export default async function PromptDetailsPage({ params }: PageProps) {
   }
 
   if (!prompt || !prompt.isPublished) {
-    notFound();
+    return (
+      <div className="w-full py-12 min-h-screen flex items-center justify-center bg-gray-950">
+        <div className="text-center py-20 bg-gray-950/20 rounded-xl border border-white/5 max-w-md mx-auto space-y-4">
+          <div className="p-4 rounded-full bg-red-500/10 border border-red-500/20 inline-flex">
+            <Terminal className="w-8 h-8 text-red-400" />
+          </div>
+          <h2 className="text-xl font-bold text-white">البرومبت غير موجود أو تم حذفه</h2>
+          <p className="text-sm text-gray-400">
+            لا توجد برومبت بهذا الرابط أو قد تم إيقاف نشره.
+          </p>
+          <Link
+            href="/prompts"
+            className={buttonVariants({
+              className:
+                "bg-gradient-to-r from-neon-cyan to-neon-blue text-white text-sm px-4 h-9",
+            })}
+          >
+            العودة إلى مكتبة البرومبتات
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (

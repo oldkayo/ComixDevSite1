@@ -69,9 +69,9 @@ export async function createEvent(values: z.infer<typeof EventSchema>) {
         hostedBy,
         attendeeCount,
         isPublished,
-        partners: {
-          connect: partnerIds?.map(pid => ({ id: pid })) || []
-        }
+        eventPartners: partnerIds?.length
+          ? { create: partnerIds.map(pid => ({ partnerId: pid })) }
+          : undefined,
       },
     });
 
@@ -134,6 +134,7 @@ export async function updateEvent(id: string, values: z.infer<typeof EventSchema
       }
     }
 
+    // Update event fields
     await db.event.update({
       where: { id },
       data: {
@@ -147,11 +148,19 @@ export async function updateEvent(id: string, values: z.infer<typeof EventSchema
         hostedBy,
         attendeeCount,
         isPublished,
-        partners: {
-          set: partnerIds?.map(pid => ({ id: pid })) || []
-        }
       },
     });
+
+    // Sync partners via explicit join table (delete-then-recreate)
+    if (partnerIds !== undefined) {
+      await db.eventPartner.deleteMany({ where: { eventId: id } });
+      if (partnerIds.length > 0) {
+        await db.eventPartner.createMany({
+          data: partnerIds.map(pid => ({ eventId: id, partnerId: pid })),
+          skipDuplicates: true,
+        });
+      }
+    }
 
     revalidatePath("/events");
     revalidatePath(`/events/${slug}`);

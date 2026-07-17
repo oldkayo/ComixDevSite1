@@ -57,6 +57,7 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
+        <div className="noise-overlay"></div>
         <Providers>
           {!isConnectPage && (
             <Navbar 
@@ -66,7 +67,7 @@ export default async function RootLayout({
               siteLogo={settings.siteLogo} 
             />
           )}
-          <main className="flex-grow flex flex-col">{children}</main>
+          <main className="flex-grow flex flex-col relative z-10">{children}</main>
           {!isConnectPage && (
             <Footer 
               links={footerLinks} 

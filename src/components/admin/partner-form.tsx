@@ -6,12 +6,11 @@ import { createPartner, updatePartner } from "@/actions/media";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ImageUpload } from "@/components/ui/image-upload";
 import {
   Loader2,
   CheckCircle2,
   AlertCircle,
-  Sparkles,
-  Folder,
 } from "lucide-react";
 
 interface PartnerFormProps {
@@ -40,61 +39,12 @@ export function PartnerForm({ initialPartner }: PartnerFormProps) {
   const [website, setWebsite] = useState("");
   const [description, setDescription] = useState("");
 
-  const [uploading, setUploading] = useState(false);
-
   useEffect(() => {
     setName(initialPartner?.name || "");
     setLogo(initialPartner?.logo || "");
     setWebsite(initialPartner?.website || "");
     setDescription(initialPartner?.description || "");
   }, [initialPartner]);
-
-  // Cloudinary direct upload function
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploading(true);
-    setStatus(null);
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", "comix_dev_preset"); // Unsigned preset
-
-    try {
-      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-      if (!cloudName) {
-        throw new Error("Cloudinary Cloud Name not configured");
-      }
-      const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        {
-          method: "POST",
-          body: formData,
-        },
-      );
-
-      if (res.ok) {
-        const data = await res.json();
-        setLogo(data.secure_url);
-      } else {
-        const errorText = await res.text();
-        console.error("Cloudinary upload failed:", res.status, errorText);
-        setStatus({
-          type: "error",
-          message:
-            "فشل رفع الصورة. يرجى إضافة رابط صورة مباشرة أو التأكد من إعدادات Cloudinary.",
-        });
-      }
-    } catch (err) {
-      console.error("Direct upload failed:", err);
-      setStatus({
-        type: "error",
-        message: "فشل رفع الصورة. يرجى إضافة رابط صورة مباشرة.",
-      });
-    } finally {
-      setUploading(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -203,62 +153,14 @@ export function PartnerForm({ initialPartner }: PartnerFormProps) {
         />
       </div>
 
-      {/* Logo upload wrapper */}
-      <div className="space-y-1">
-        <label className="text-[10px] font-semibold text-gray-400 block">
-          شعار الشريك (مربع أو أفقي)
-        </label>
-        <div className="flex flex-col sm:flex-row items-center gap-2">
-          <div className="relative flex-1 w-full">
-            <Input
-              type="text"
-              placeholder="رابط الشعار المباشر أو الرفع..."
-              value={logo}
-              onChange={(e) => setLogo(e.target.value)}
-              required
-              disabled={saving}
-              className="bg-white/5 border-white/10 text-white focus:border-neon-cyan focus:ring-neon-cyan text-right text-xs h-9 w-full"
-            />
-          </div>
-
-          <div className="shrink-0 w-full sm:w-auto">
-            <input
-              type="file"
-              id="partnerLogoUpload"
-              accept="image/*"
-              onChange={handleLogoUpload}
-              disabled={saving || uploading}
-              className="hidden"
-            />
-            <label
-              htmlFor="partnerLogoUpload"
-              className="w-full sm:w-auto bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[10px] font-semibold px-4 h-9 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
-            >
-              {uploading ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-neon-cyan" />
-                  جاري الرفع...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-3.5 h-3.5 text-neon-cyan" />
-                  رفع الشعار
-                </>
-              )}
-            </label>
-          </div>
-        </div>
-
-        {logo && (
-          <div className="mt-2 w-16 h-16 rounded-lg overflow-hidden border border-white/5 bg-gray-900 flex items-center justify-center p-1.5">
-            <img
-              src={logo}
-              alt="Preview"
-              className="max-h-full max-w-full object-contain"
-            />
-          </div>
-        )}
-      </div>
+      {/* Logo */}
+      <ImageUpload
+        value={logo}
+        onChange={setLogo}
+        disabled={saving}
+        label="شعار الشريك (مربع أو أفقي)"
+        placeholder="اختر صورة أو اسحبها هنا"
+      />
 
       {/* Description */}
       <div className="space-y-1">
@@ -296,7 +198,7 @@ export function PartnerForm({ initialPartner }: PartnerFormProps) {
         )}
         <Button
           type="submit"
-          disabled={saving || uploading || !logo}
+          disabled={saving || !logo}
           className="bg-gradient-to-r from-neon-cyan to-neon-blue text-white hover:opacity-90 text-xs h-9 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer flex-1"
         >
           {saving ? (

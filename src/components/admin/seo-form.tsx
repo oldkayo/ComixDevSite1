@@ -6,7 +6,8 @@ import { updateSEOSettings } from "@/actions/cms";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, CheckCircle2, AlertCircle, Sparkles } from "lucide-react";
+import { ImageUpload } from "@/components/ui/image-upload";
+import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface SEOFormProps {
   initialSEO: {
@@ -31,8 +32,6 @@ export function SEOForm({ initialSEO }: SEOFormProps) {
   const [keywords, setKeywords] = useState("");
   const [ogImage, setOgImage] = useState("");
 
-  const [uploading, setUploading] = useState(false);
-
   useEffect(() => {
     if (initialSEO) {
       setPage(initialSEO.page);
@@ -42,35 +41,6 @@ export function SEOForm({ initialSEO }: SEOFormProps) {
       setOgImage(initialSEO.ogImage || "");
     }
   }, [initialSEO]);
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", "comix_dev_preset"); // Unsigned preset
-
-    try {
-      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "demo";
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setOgImage(data.secure_url);
-      } else {
-        setOgImage(`/images/workshop_ai.png`);
-      }
-    } catch (err) {
-      setOgImage(`/images/workshop_ai.png`);
-    } finally {
-      setUploading(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -202,56 +172,13 @@ export function SEOForm({ initialSEO }: SEOFormProps) {
       </div>
 
       {/* OpenGraph Image */}
-      <div className="space-y-1">
-        <label className="text-[10px] font-semibold text-gray-400 block">صورة المشاركة بمواقع التواصل (OG Image)</label>
-        <div className="flex flex-col sm:flex-row items-center gap-2">
-          
-          <div className="relative flex-1 w-full">
-            <Input
-              type="text"
-              placeholder="رابط الصورة المباشر أو الرفع..."
-              value={ogImage}
-              onChange={(e) => setOgImage(e.target.value)}
-              disabled={saving}
-              className="bg-white/5 border-white/10 text-white focus:border-neon-cyan focus:ring-neon-cyan text-right text-xs h-9 w-full"
-            />
-          </div>
-
-          <div className="shrink-0 w-full sm:w-auto">
-            <input
-              type="file"
-              id="seoImageUpload"
-              accept="image/*"
-              onChange={handleImageUpload}
-              disabled={saving || uploading}
-              className="hidden"
-            />
-            <label
-              htmlFor="seoImageUpload"
-              className="w-full sm:w-auto bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[10px] font-semibold px-4 h-9 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
-            >
-              {uploading ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-neon-cyan" />
-                  جاري الرفع...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-3.5 h-3.5 text-neon-cyan" />
-                  رفع غلاف
-                </>
-              )}
-            </label>
-          </div>
-
-        </div>
-
-        {ogImage && (
-          <div className="mt-2 w-full h-24 rounded-lg overflow-hidden border border-white/5 bg-gray-900 flex items-center justify-center relative">
-            <img src={ogImage} alt="OG cover" className="max-h-full max-w-full object-contain" />
-          </div>
-        )}
-      </div>
+      <ImageUpload
+        value={ogImage}
+        onChange={setOgImage}
+        disabled={saving}
+        label="صورة المشاركة بمواقع التواصل (OG Image)"
+        placeholder="اختر صورة أو اسحبها هنا"
+      />
 
       {/* Actions */}
       <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/5">
@@ -268,7 +195,7 @@ export function SEOForm({ initialSEO }: SEOFormProps) {
         </Button>
         <Button
           type="submit"
-          disabled={saving || uploading}
+          disabled={saving}
           className="bg-gradient-to-r from-neon-cyan to-neon-blue text-white hover:opacity-90 text-xs h-9 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer flex-1"
         >
           {saving ? (

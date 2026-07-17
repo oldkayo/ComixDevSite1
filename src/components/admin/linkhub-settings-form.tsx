@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { AlertCircle, CheckCircle2, Image as ImageIcon, Loader2 } from "lucide-react";
+import { ImageUpload } from "@/components/ui/image-upload";
+import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 
 interface LinkHubSettingsFormProps {
   initialSettings: {
@@ -28,47 +29,8 @@ export function LinkHubSettingsForm({ initialSettings }: LinkHubSettingsFormProp
   const [coverImage, setCoverImage] = useState<string>(initialSettings.coverImage || "");
   const [isEnabled, setIsEnabled] = useState(initialSettings.isEnabled);
 
-  const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [uploadingCover, setUploadingCover] = useState(false);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isCover = false) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (isCover) setUploadingCover(true);
-    else setUploadingLogo(true);
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", "comix_dev_preset");
-
-    try {
-      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "demo";
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (isCover) setCoverImage(data.secure_url);
-        else setLogo(data.secure_url);
-      } else {
-        const mockUrl = `/images/workshop_ai.png`;
-        if (isCover) setCoverImage(mockUrl);
-        else setLogo(mockUrl);
-      }
-    } catch (err) {
-      const mockUrl = `/images/workshop_ai.png`;
-      if (isCover) setCoverImage(mockUrl);
-      else setLogo(mockUrl);
-    } finally {
-      if (isCover) setUploadingCover(false);
-      else setUploadingLogo(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -151,50 +113,22 @@ export function LinkHubSettingsForm({ initialSettings }: LinkHubSettingsFormProp
         {/* Logo and Banner Assets */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Logo Field */}
-          <div className="space-y-3">
-            <Label className="text-gray-200">شعار الصفحة (Logo)</Label>
-            <div className="flex items-center gap-4">
-              <div className="relative w-20 h-20 rounded-xl bg-gray-900 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
-                {logo ? (
-                  <img src={logo} alt="Logo Preview" className="w-full h-full object-cover" />
-                ) : (
-                  <ImageIcon className="w-8 h-8 text-gray-600" />
-                )}
-              </div>
-              <div className="space-y-2 flex-1">
-                <Input 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={(e) => handleFileUpload(e, false)}
-                  className="bg-gray-900 border-white/10 text-white text-xs cursor-pointer file:text-white file:bg-white/10 file:border-0"
-                />
-                <p className="text-[10px] text-gray-500">حجم مربع موصى به (مثل: 200×200 بكسل).</p>
-              </div>
-            </div>
-          </div>
+          <ImageUpload
+            value={logo}
+            onChange={setLogo}
+            disabled={saving}
+            label="شعار الصفحة (Logo)"
+            placeholder="اختر صورة أو اسحبها هنا"
+          />
 
           {/* Cover/Banner Image Field */}
-          <div className="space-y-3">
-            <Label className="text-gray-200">صورة الغلاف (Cover/Banner Image) - اختياري</Label>
-            <div className="flex items-center gap-4">
-              <div className="relative w-20 h-20 rounded-xl bg-gray-900 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
-                {coverImage ? (
-                  <img src={coverImage} alt="Cover Preview" className="w-full h-full object-cover" />
-                ) : (
-                  <ImageIcon className="w-8 h-8 text-gray-600" />
-                )}
-              </div>
-              <div className="space-y-2 flex-1">
-                <Input 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={(e) => handleFileUpload(e, true)}
-                  className="bg-gray-900 border-white/10 text-white text-xs cursor-pointer file:text-white file:bg-white/10 file:border-0"
-                />
-                <p className="text-[10px] text-gray-500">تظهر كخلفية علوية جذابة (مثل: 1200×400 بكسل).</p>
-              </div>
-            </div>
-          </div>
+          <ImageUpload
+            value={coverImage}
+            onChange={setCoverImage}
+            disabled={saving}
+            label="صورة الغلاف (Cover/Banner Image) - اختياري"
+            placeholder="اختر صورة أو اسحبها هنا"
+          />
         </div>
       </div>
 
@@ -202,7 +136,7 @@ export function LinkHubSettingsForm({ initialSettings }: LinkHubSettingsFormProp
       <div className="flex justify-start">
         <Button 
           type="submit" 
-          disabled={saving || uploadingLogo || uploadingCover}
+          disabled={saving}
           className="bg-gradient-to-r from-neon-cyan to-neon-blue text-white shadow-lg shadow-neon-cyan/15 hover:opacity-90 font-medium px-8"
         >
           {saving ? (

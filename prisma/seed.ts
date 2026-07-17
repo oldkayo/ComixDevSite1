@@ -35,9 +35,9 @@ async function main() {
       slug: "ai-large-language-models",
       shortDescription: "تعلم كيفية بناء تطبيقات مخصصة باستخدام نماذج GPT و LangChain.",
       description: "تعلم كيفية بناء تطبيقات مخصصة باستخدام نماذج GPT و LangChain، وتطوير شات بوت متطور خطوة بخطوة. تغطي هذه الورشة معمارية المحولات، وطرق كتابة البرومبتات الفعالة للـ APIs، وربط قاعدة البيانات واسترجاع المعلومات.",
-      image: "/images/workshop_ai.png",
+      coverImage: "/images/workshop_ai.png",
       date: new Date("2026-08-15T18:00:00Z"),
-      duration: 180,
+      duration: "180",
       location: "عن بعد عبر Zoom",
       capacity: 30,
       pointsReward: 50,
@@ -48,9 +48,9 @@ async function main() {
       slug: "nextjs-advanced-frontend",
       shortDescription: "ورشة عمل عملية لبناء مواقع ويب فائقة السرعة باستخدام Next.js 16.",
       description: "ورشة عمل عملية لبناء مواقع ويب فائقة السرعة وقابلة للتوسع باستخدام Next.js 16، الـ Server Actions ونظام Proxy الجديد لتمرير الطلبات وحماية لوحة التحكم.",
-      image: "/images/workshop_next.png",
+      coverImage: "/images/workshop_next.png",
       date: new Date("2026-08-22T17:00:00Z"),
-      duration: 240,
+      duration: "240",
       location: "مكتب ComixDev بالرياض",
       capacity: 25,
       pointsReward: 60,
@@ -61,9 +61,9 @@ async function main() {
       slug: "prompt-engineering-masterclass",
       shortDescription: "افهم الأسرار العميقة وراء كتابة الأوامر الفعالة لزيادة إنتاجيتك.",
       description: "افهم الأسرار العميقة وراء كتابة الأوامر البرمجية الفعالة للـ AI لزيادة إنتاجيتك وصياغة حلول متقدمة، مع تفادي مشاكل هلوسة النماذج.",
-      image: "/images/workshop_prompt.png",
+      coverImage: "/images/workshop_prompt.png",
       date: new Date("2026-08-29T19:00:00Z"),
-      duration: 120,
+      duration: "120",
       location: "عن بعد عبر Google Meet",
       capacity: 40,
       pointsReward: 30,
@@ -80,6 +80,7 @@ async function main() {
       console.log(`Workshop created: ${workshop.title}`);
     }
   }
+
   // 3. Create Prompt Categories
   const promptCategories = [
     { name: "ذكاء اصطناعي", slug: "ai", icon: "Sparkles" },
@@ -227,7 +228,7 @@ async function main() {
     const ev = events[i];
     let dbEv = await prisma.event.findUnique({
       where: { slug: ev.slug },
-      include: { galleryItems: true, partners: true }
+      include: { galleryItems: true, eventPartners: true }
     });
     if (!dbEv) {
       dbEv = await prisma.event.create({
@@ -242,11 +243,11 @@ async function main() {
           hostedBy: ev.hostedBy,
           attendeeCount: ev.attendeeCount,
           isPublished: ev.isPublished,
-          partners: {
-            connect: dbPartners.map(p => ({ id: p.id }))
+          eventPartners: {
+            create: dbPartners.map(p => ({ partnerId: p.id }))
           }
         },
-        include: { galleryItems: true, partners: true }
+        include: { galleryItems: true, eventPartners: true }
       });
       console.log(`Event created: ${ev.title}`);
 

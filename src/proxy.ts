@@ -14,7 +14,3 @@ export const proxy = authMiddleware((req) => {
   });
 });
 
-export const config = {
-  // Protect all paths except for API routes, Next.js static/image optimization files, and favicon
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
-};

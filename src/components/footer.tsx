@@ -65,20 +65,20 @@ export function Footer({ links, socials, settings }: FooterProps) {
   };
 
   return (
-    <footer className="w-full bg-gray-950/80 border-t border-white/5 py-12 text-gray-400">
+    <footer className="w-full bg-slate-950 border-t border-slate-800 py-10 text-slate-400">
       <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
         
         {/* Brand Information */}
         <div className="space-y-4 md:col-span-2">
           <Link href="/" className="flex items-center gap-2 group w-fit">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-neon-cyan to-neon-purple flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-primary to-secondary flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-white" />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent group-hover:from-neon-cyan group-hover:to-neon-purple transition-all duration-300">
+            <span className="text-xl font-bold text-white group-hover:text-primary transition-colors">
               {settings.siteName}
             </span>
           </Link>
-          <p className="text-sm text-gray-400 max-w-sm leading-relaxed text-right">
+          <p className="text-sm text-slate-400 max-w-sm leading-relaxed text-right">
             {settings.siteDescription}
           </p>
           
@@ -86,17 +86,17 @@ export function Footer({ links, socials, settings }: FooterProps) {
           {socials.length > 0 && (
             <div className="flex items-center gap-4 pt-2">
               {socials.map((social, index) => (
-                <a
-                  key={index}
-                  href={social.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-neon-cyan text-gray-400 transition-colors cursor-pointer"
-                  aria-label={social.platform}
-                >
-                  {getSocialIcon(social.platform)}
-                </a>
-              ))}
+              <a
+                key={index}
+                href={social.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-primary text-slate-400 transition-colors cursor-pointer"
+                aria-label={social.platform}
+              >
+                {getSocialIcon(social.platform)}
+              </a>
+            ))}
             </div>
           )}
         </div>
@@ -106,8 +106,8 @@ export function Footer({ links, socials, settings }: FooterProps) {
           <h4 className="text-white font-semibold text-base mb-4 text-right">روابط سريعة</h4>
           <ul className="space-y-2 text-sm text-right">
             {links.map((link, idx) => (
-              <li key={idx}>
-                <Link href={link.url} className="hover:text-neon-cyan transition-colors">
+            <li key={idx}>
+              <Link href={link.url} className="hover:text-primary transition-colors">
                   {link.name}
                 </Link>
               </li>
@@ -120,17 +120,17 @@ export function Footer({ links, socials, settings }: FooterProps) {
           <h4 className="text-white font-semibold text-base mb-4 text-right">الدعم والخصوصية</h4>
           <ul className="space-y-2 text-sm text-right">
             <li>
-              <Link href="/privacy" className="hover:text-neon-cyan transition-colors">سياسة الخصوصية</Link>
+              <Link href="/privacy" className="hover:text-primary transition-colors">سياسة الخصوصية</Link>
             </li>
             <li>
-              <Link href="/terms" className="hover:text-neon-cyan transition-colors">الشروط والأحكام</Link>
+              <Link href="/terms" className="hover:text-primary transition-colors">الشروط والأحكام</Link>
             </li>
           </ul>
         </div>
 
       </div>
 
-      <div className="container mx-auto px-4 mt-8 pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-500">
+      <div className="container mx-auto px-4 mt-8 pt-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
         <div>
           {settings.copyrightText || `جميع الحقوق محفوظة © ${settings.siteName} ${currentYear}`}
         </div>

@@ -6,7 +6,8 @@ import { updateSiteSettings } from "@/actions/cms";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, CheckCircle2, AlertCircle, Sparkles, Building2, Contact, Award, Palette } from "lucide-react";
+import { ImageUpload } from "@/components/ui/image-upload";
+import { Loader2, CheckCircle2, AlertCircle, Building2, Contact, Award, Palette } from "lucide-react";
 
 interface SettingsFormProps {
   initialSettings: {
@@ -48,44 +49,6 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
   const [statsStudents, setStatsStudents] = useState(initialSettings.statsStudentsCount || 0);
   const [statsCertificates, setStatsCertificates] = useState(initialSettings.statsCertificatesCount || 0);
   const [statsProjects, setStatsProjects] = useState(initialSettings.statsProjectsCount || 0);
-
-  const [uploadingLogo, setUploadingLogo] = useState(false);
-
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>, isFavicon = false) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (isFavicon) setUploadingLogo(true);
-    else setUploadingLogo(true);
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", "comix_dev_preset"); // Unsigned preset
-
-    try {
-      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "demo";
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (isFavicon) setFavicon(data.secure_url);
-        else setSiteLogo(data.secure_url);
-      } else {
-        const mockUrl = `/images/workshop_ai.png`;
-        if (isFavicon) setFavicon(mockUrl);
-        else setSiteLogo(mockUrl);
-      }
-    } catch (err) {
-      const mockUrl = `/images/workshop_ai.png`;
-      if (isFavicon) setFavicon(mockUrl);
-      else setSiteLogo(mockUrl);
-    } finally {
-      setUploadingLogo(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -189,6 +152,24 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
               className="bg-white/5 border-white/10 text-white focus:border-neon-cyan focus:ring-neon-cyan text-sm leading-relaxed"
             />
           </div>
+        </div>
+        
+        {/* Logo & Favicon */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+          <ImageUpload
+            value={siteLogo}
+            onChange={setSiteLogo}
+            disabled={saving}
+            label="شعار الموقع (Site Logo)"
+            placeholder="اختر صورة أو اسحبها هنا"
+          />
+          <ImageUpload
+            value={favicon}
+            onChange={setFavicon}
+            disabled={saving}
+            label="أيقونة الموقع (Favicon)"
+            placeholder="اختر صورة أو اسحبها هنا"
+          />
         </div>
       </div>
 
@@ -341,7 +322,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
       <div className="border-t border-white/5 pt-6 flex justify-end">
         <Button
           type="submit"
-          disabled={saving || uploadingLogo}
+          disabled={saving}
           className="bg-gradient-to-r from-neon-cyan to-neon-blue text-white hover:opacity-90 text-xs px-8 h-10 rounded-xl flex items-center gap-1.5 cursor-pointer"
         >
           {saving ? (
