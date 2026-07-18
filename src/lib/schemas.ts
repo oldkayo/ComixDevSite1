@@ -25,7 +25,6 @@ export const WorkshopSchema = z.object({
   date: z.string().min(1, "يرجى تحديد تاريخ الورشة"),
   startTime: z.string().optional().or(z.literal("")),
   endTime: z.string().optional().or(z.literal("")),
-  duration: z.string().optional().default(""),
   location: z.string().min(3, "الموقع يجب أن يتكون من 3 أحرف على الأقل"),
   capacity: z.coerce.number().min(1, "السعة الاستيعابية يجب أن تكون أكبر من 0"),
   pointsReward: z.coerce.number().min(0, "نقاط الولاء لا يمكن أن تكون سالبة"),

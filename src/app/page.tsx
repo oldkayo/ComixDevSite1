@@ -32,6 +32,7 @@ import { PromptCopyButton } from "@/components/prompts/prompt-card-actions";
 import { db } from "@/lib/db";
 import { GalleryGrid } from "@/components/gallery/gallery-grid";
 import * as LucideIcons from "lucide-react";
+import { calculateWorkshopDuration } from "@/lib/utils";
 
 export default async function HomePage() {
   // Fetch data on server
@@ -268,10 +269,20 @@ export default async function HomePage() {
                         })}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="w-4 h-4 text-primary" />
-                      <span>{workshop.duration}</span>
-                    </div>
+                    {calculateWorkshopDuration(
+                      workshop.startTime,
+                      workshop.endTime,
+                    ) && (
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-4 h-4 text-primary" />
+                        <span>
+                          {calculateWorkshopDuration(
+                            workshop.startTime,
+                            workshop.endTime,
+                          )}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-1.5">
                       <Users className="w-4 h-4 text-primary" />
                       <span>{workshop.capacity} مقعد</span>

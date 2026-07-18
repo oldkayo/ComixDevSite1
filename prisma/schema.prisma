@@ -45,7 +45,6 @@ model Workshop {
   description      String                 @db.Text
   coverImage       String?                @map("image") // Renamed for consistency
   date             DateTime
-  duration         String?
   startTime        String?
   endTime          String?
   location         String

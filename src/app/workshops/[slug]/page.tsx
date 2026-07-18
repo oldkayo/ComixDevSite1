@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { notFound } from "next/navigation";
 import { RegistrationStatus } from "@prisma/client";
+import { calculateWorkshopDuration } from "@/lib/utils";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -371,16 +372,23 @@ export default async function WorkshopDetailsPage({ params }: PageProps) {
                   </div>
                 )}
 
-                {!isCompleted && (
-                  /* Duration - only show for not completed */
-                  <div className="flex items-center justify-between border-b border-white/5 pb-3">
-                    <span className="text-gray-400">المدة الزمنية:</span>
-                    <span className="font-semibold text-white flex items-center gap-1.5">
-                      <Clock className="w-4 h-4 text-neon-cyan" />
-                      {workshop.duration}
-                    </span>
-                  </div>
-                )}
+                {!isCompleted &&
+                  calculateWorkshopDuration(
+                    workshop.startTime,
+                    workshop.endTime,
+                  ) && (
+                    /* Duration - only show for not completed */
+                    <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                      <span className="text-gray-400">المدة الزمنية:</span>
+                      <span className="font-semibold text-white flex items-center gap-1.5">
+                        <Clock className="w-4 h-4 text-neon-cyan" />
+                        {calculateWorkshopDuration(
+                          workshop.startTime,
+                          workshop.endTime,
+                        )}
+                      </span>
+                    </div>
+                  )}
 
                 {/* Location */}
                 <div className="flex items-center justify-between border-b border-white/5 pb-3">

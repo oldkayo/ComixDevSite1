@@ -70,7 +70,6 @@ export function WorkshopForm({ initialData, mode }: WorkshopFormProps) {
   );
   const [coverImage, setCoverImage] = useState(initialData?.coverImage || "");
   const [date, setDate] = useState(formatDateForInput(initialData?.date));
-  const [duration, setDuration] = useState(initialData?.duration || "");
   const [startTime, setStartTime] = useState(initialData?.startTime || "");
   const [endTime, setEndTime] = useState(initialData?.endTime || "");
   const [location, setLocation] = useState(
@@ -113,7 +112,6 @@ export function WorkshopForm({ initialData, mode }: WorkshopFormProps) {
       description,
       image: coverImage,
       date,
-      duration,
       startTime,
       endTime,
       location,
@@ -297,20 +295,6 @@ export function WorkshopForm({ initialData, mode }: WorkshopFormProps) {
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
             className="bg-white/5 border-white/10 text-white placeholder-gray-600 focus:border-neon-cyan focus:ring-neon-cyan text-right"
-          />
-        </div>
-
-        {/* Duration */}
-        <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-gray-300 block text-right">
-            مدة الورشة
-          </label>
-          <Input
-            type="text"
-            value={duration}
-            onChange={(e) => setDuration(e.target.value)}
-            placeholder="مثال: 2 ساعات"
-            className="bg-white/5 border-white/10 text-white placeholder-gray-600 focus:border-neon-cyan focus:ring-neon-cyan"
           />
         </div>
 

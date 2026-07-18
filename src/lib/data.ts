@@ -11,7 +11,6 @@ export interface Workshop {
   date: Date;
   startTime: string | null;
   endTime: string | null;
-  duration: string | null;
   location: string;
   capacity: number;
   pointsReward: number;
