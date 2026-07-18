@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 const authMiddleware = NextAuth(authConfig).auth;
 
-export const proxy = authMiddleware((req) => {
+export default authMiddleware((req) => {
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-pathname", req.nextUrl.pathname);
   return NextResponse.next({
@@ -13,4 +13,11 @@ export const proxy = authMiddleware((req) => {
     },
   });
 });
+
+export const config = {
+  // Exclude Auth.js API routes, Next.js internals, and static assets from middleware
+  matcher: [
+    "/((?!api/auth|_next/static|_next/image|favicon.ico).*)",
+  ],
+};
 
