@@ -21,6 +21,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Disable Turbopack for Vercel build (use --no-turbo flag in package.json)
 };
 
 export default nextConfig;
