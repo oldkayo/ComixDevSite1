@@ -27,9 +27,12 @@ interface PageProps {
 
 export default async function WorkshopDetailsPage({ params }: PageProps) {
   const resolvedParams = await params;
-  const slug = resolvedParams.slug;
+  // Decode the slug to handle URL-encoded Arabic characters
+  const slug = decodeURIComponent(resolvedParams.slug);
 
-  // Retrieve workshop details from database with non-cancelled registrations count
+  console.log(`[WorkshopDetails] Querying slug: "${slug}"`);
+
+  // Retrieve workshop details from database
   let workshop: any = null;
   try {
     workshop = await db.workshop.findUnique({
@@ -47,27 +50,52 @@ export default async function WorkshopDetailsPage({ params }: PageProps) {
       },
     });
   } catch (error) {
-    console.error("Database connection failed inside details page:", error);
+    console.error(`[WorkshopDetails] Database error for slug "${slug}":`, error);
   }
 
-  if (!workshop || !workshop.isPublished) {
+  console.log(`[WorkshopDetails] Result: ${workshop ? workshop.title : "NOT FOUND"}, isPublished: ${workshop?.isPublished}`);
+
+  // Workshop not found in DB at all
+  if (!workshop) {
     return (
       <div className="w-full py-12 min-h-screen flex items-center justify-center">
         <div className="text-center py-20 bg-gray-950/20 rounded-xl border border-white/5 max-w-md mx-auto space-y-4">
           <div className="p-4 rounded-full bg-red-500/10 border border-red-500/20 inline-flex">
             <Calendar className="w-8 h-8 text-red-400" />
           </div>
-          <h2 className="text-xl font-bold text-white">
-            الورشة غير موجودة أو تم حذفها
-          </h2>
+          <h2 className="text-xl font-bold text-white">الورشة غير موجودة</h2>
           <p className="text-sm text-gray-400">
-            لا توجد ورشة عمل بهذا الرابط أو قد تم إيقاف نشرها.
+            لا توجد ورشة عمل بهذا الرابط أو قد تم حذفها.
           </p>
           <Link
             href="/workshops"
             className={buttonVariants({
-              className:
-                "bg-gradient-to-r from-neon-cyan to-neon-blue text-white text-sm px-4 h-9",
+              className: "bg-gradient-to-r from-neon-cyan to-neon-blue text-white text-sm px-4 h-9",
+            })}
+          >
+            العودة إلى جميع الورشات
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Workshop exists but not published
+  if (!workshop.isPublished) {
+    return (
+      <div className="w-full py-12 min-h-screen flex items-center justify-center">
+        <div className="text-center py-20 bg-gray-950/20 rounded-xl border border-white/5 max-w-md mx-auto space-y-4">
+          <div className="p-4 rounded-full bg-yellow-500/10 border border-yellow-500/20 inline-flex">
+            <Calendar className="w-8 h-8 text-yellow-400" />
+          </div>
+          <h2 className="text-xl font-bold text-white">هذا المحتوى غير منشور حالياً</h2>
+          <p className="text-sm text-gray-400">
+            ورشة العمل هذه غير متاحة للعرض في الوقت الحالي.
+          </p>
+          <Link
+            href="/workshops"
+            className={buttonVariants({
+              className: "bg-gradient-to-r from-neon-cyan to-neon-blue text-white text-sm px-4 h-9",
             })}
           >
             العودة إلى جميع الورشات

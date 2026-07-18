@@ -9,7 +9,7 @@ export async function getSiteSettings() {
         data: {
           siteName: "ComixDev",
           siteDescription: "منصة لورشات تقنية وذكاء اصطناعي",
-          siteLogo: "/logo/comixLogo.png",
+          siteLogo: "public/logo/comixLogo.png",
           favicon: "",
           primaryColor: "#06b6d4",
           secondaryColor: "#a855f7",

@@ -23,7 +23,10 @@ interface PageProps {
 
 export default async function EventDetailsPage({ params }: PageProps) {
   const resolvedParams = await params;
-  const slug = resolvedParams.slug;
+  // Decode slug to handle URL-encoded Arabic characters
+  const slug = decodeURIComponent(resolvedParams.slug);
+
+  console.log(`[EventDetails] Querying slug: "${slug}"`);
 
   let event: any = null;
   try {
@@ -39,35 +42,45 @@ export default async function EventDetailsPage({ params }: PageProps) {
       },
     });
   } catch (error) {
-    console.error("Failed to query event by slug:", error);
+    console.error(`[EventDetails] Database error for slug "${slug}":`, error);
   }
 
-  if (!event || !event.isPublished) {
+  console.log(`[EventDetails] Result: ${event ? event.title : "NOT FOUND"}, isPublished: ${event?.isPublished}`);
+
+  if (!event) {
     return (
       <div className="w-full py-12 min-h-screen flex items-center justify-center bg-gray-950">
         <div className="text-center py-20 bg-gray-950/20 rounded-xl border border-white/5 max-w-md mx-auto space-y-4">
           <div className="p-4 rounded-full bg-red-500/10 border border-red-500/20 inline-flex">
             <Calendar className="w-8 h-8 text-red-400" />
           </div>
-          <h2 className="text-xl font-bold text-white">
-            الفعالية غير موجودة أو تم حذفها
-          </h2>
-          <p className="text-sm text-gray-400">
-            لا توجد فعالية بهذا الرابط أو قد تم إيقاف نشرها.
-          </p>
-          <Link
-            href="/events"
-            className={buttonVariants({
-              className:
-                "bg-gradient-to-r from-neon-cyan to-neon-blue text-white text-sm px-4 h-9",
-            })}
-          >
-            العودة إلى جميع الفعاليات
+          <h2 className="text-xl font-bold text-white">الفعالية غير موجودة</h2>
+          <p className="text-sm text-gray-400">لا توجد فعالية بهذا الرابط أو قد تم حذفها.</p>
+          <Link href="/events" className={buttonVariants({ className: "bg-gradient-to-r from-neon-cyan to-neon-blue text-white text-sm" })}>
+            العودة إلى الفعاليات
           </Link>
         </div>
       </div>
     );
   }
+
+  if (!event.isPublished) {
+    return (
+      <div className="w-full py-12 min-h-screen flex items-center justify-center bg-gray-950">
+        <div className="text-center py-20 bg-gray-950/20 rounded-xl border border-white/5 max-w-md mx-auto space-y-4">
+          <div className="p-4 rounded-full bg-yellow-500/10 border border-yellow-500/20 inline-flex">
+            <Calendar className="w-8 h-8 text-yellow-400" />
+          </div>
+          <h2 className="text-xl font-bold text-white">هذا المحتوى غير منشور حالياً</h2>
+          <p className="text-sm text-gray-400">الفعالية غير متاحة للعرض في الوقت الحالي.</p>
+          <Link href="/events" className={buttonVariants({ className: "bg-gradient-to-r from-neon-cyan to-neon-blue text-white text-sm" })}>
+            العودة إلى الفعاليات
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
 
   const startFormatted = new Date(event.startDate).toLocaleDateString("ar-EG", {
     day: "numeric",

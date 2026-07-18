@@ -14,55 +14,61 @@ interface PageProps {
 
 export default async function PromptDetailsPage({ params }: PageProps) {
   const resolvedParams = await params;
-  const slug = resolvedParams.slug;
+  // Decode slug to handle URL-encoded Arabic characters
+  const slug = decodeURIComponent(resolvedParams.slug);
+
+  console.log(`[PromptDetails] Querying slug: "${slug}"`);
 
   let prompt: any = null;
   try {
-    // 1. Fetch prompt and increment viewCount inside query transaction
+    // Fetch prompt and increment viewCount
     prompt = await db.prompt.update({
       where: { slug },
-      data: {
-        viewCount: {
-          increment: 1,
-        },
-      },
-      include: {
-        category: true,
-      },
+      data: { viewCount: { increment: 1 } },
+      include: { category: true },
     });
   } catch (error) {
-    console.error("Failed to fetch and increment view count for prompt:", error);
-    
-    // Fallback: try querying without incrementing if database update fails
+    // Fallback: query without incrementing
     try {
       prompt = await db.prompt.findUnique({
         where: { slug },
         include: { category: true },
       });
     } catch (e) {
-      console.error("Critical prompt retrieval error:", e);
+      console.error(`[PromptDetails] Critical retrieval error for slug "${slug}":`, e);
     }
   }
 
-  if (!prompt || !prompt.isPublished) {
+  console.log(`[PromptDetails] Result: ${prompt ? prompt.title : "NOT FOUND"}, isPublished: ${prompt?.isPublished}`);
+
+  if (!prompt) {
     return (
       <div className="w-full py-12 min-h-screen flex items-center justify-center bg-gray-950">
         <div className="text-center py-20 bg-gray-950/20 rounded-xl border border-white/5 max-w-md mx-auto space-y-4">
           <div className="p-4 rounded-full bg-red-500/10 border border-red-500/20 inline-flex">
             <Terminal className="w-8 h-8 text-red-400" />
           </div>
-          <h2 className="text-xl font-bold text-white">البرومبت غير موجود أو تم حذفه</h2>
-          <p className="text-sm text-gray-400">
-            لا توجد برومبت بهذا الرابط أو قد تم إيقاف نشره.
-          </p>
-          <Link
-            href="/prompts"
-            className={buttonVariants({
-              className:
-                "bg-gradient-to-r from-neon-cyan to-neon-blue text-white text-sm px-4 h-9",
-            })}
-          >
-            العودة إلى مكتبة البرومبتات
+          <h2 className="text-xl font-bold text-white">البرومبت غير موجود</h2>
+          <p className="text-sm text-gray-400">لا توجد برومبت بهذا الرابط أو قد تم حذفه.</p>
+          <Link href="/prompts" className={buttonVariants({ className: "bg-gradient-to-r from-neon-cyan to-neon-blue text-white text-sm" })}>
+            العودة إلى البرومبتات
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!prompt.isPublished) {
+    return (
+      <div className="w-full py-12 min-h-screen flex items-center justify-center bg-gray-950">
+        <div className="text-center py-20 bg-gray-950/20 rounded-xl border border-white/5 max-w-md mx-auto space-y-4">
+          <div className="p-4 rounded-full bg-yellow-500/10 border border-yellow-500/20 inline-flex">
+            <Terminal className="w-8 h-8 text-yellow-400" />
+          </div>
+          <h2 className="text-xl font-bold text-white">هذا المحتوى غير منشور حالياً</h2>
+          <p className="text-sm text-gray-400">هذا البرومبت غير متاح للعرض في الوقت الحالي.</p>
+          <Link href="/prompts" className={buttonVariants({ className: "bg-gradient-to-r from-neon-cyan to-neon-blue text-white text-sm" })}>
+            العودة إلى البرومبتات
           </Link>
         </div>
       </div>
