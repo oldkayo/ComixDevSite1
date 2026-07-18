@@ -25,7 +25,6 @@ interface WorkshopFormProps {
     description: string;
     coverImage: string | null;
     date: Date;
-    duration?: string | null;
     location: string;
     capacity: number;
     pointsReward: number;
